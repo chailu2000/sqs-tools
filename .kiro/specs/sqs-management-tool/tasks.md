@@ -6,7 +6,7 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
 
 ## Tasks
 
-- [ ] 1. Set up project structure and dependencies
+- [x] 1. Set up project structure and dependencies
   - Create Spring Boot 4.0.x project with Gradle (Java 21 or 23) with required dependencies:
     - Spring Web
     - Spring Data JPA
@@ -26,8 +26,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
   - Configure Spring Data JPA to use SQLite with Hibernate 6.x dialect
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 2. Implement AWS credentials and client management
-  - [ ] 2.1 Create CredentialsProvider component
+- [x] 2. Implement AWS credentials and client management
+  - [x] 2.1 Create CredentialsProvider component
     - Implement credential resolution from environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
     - Implement credential resolution from AWS CLI profiles
     - Implement priority logic (environment variables take precedence over profiles)
@@ -38,7 +38,7 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - **Property: Credential Resolution Priority**
     - **Validates: Requirements 2.3**
   
-  - [ ] 2.3 Create SQSClientFactory component
+  - [x] 2.3 Create SQSClientFactory component
     - Implement SQS client creation with region configuration
     - Add client caching per region
     - Integrate with CredentialsProvider
@@ -49,8 +49,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test client caching behavior
     - _Requirements: 11.4_
 
-- [ ] 3. Implement configuration persistence with SQLite
-  - [ ] 3.1 Create database entities and repositories
+- [x] 3. Implement configuration persistence with SQLite
+  - [x] 3.1 Create database entities and repositories
     - Create QueueEntity JPA entity with fields matching QueueConfiguration
     - Create PreferenceEntity JPA entity for key-value preferences
     - Create QueueRepository extending JpaRepository
@@ -58,7 +58,7 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Configure SQLite database file location (cross-platform path)
     - _Requirements: 12.1, 12.2, 12.3, 14.3_
   
-  - [ ] 3.2 Create ConfigurationService
+  - [x] 3.2 Create ConfigurationService
     - Implement save queue configuration to database
     - Implement load queue configurations from database
     - Implement remove queue configuration
@@ -84,8 +84,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test database constraint violations
     - _Requirements: 12.1, 12.5, 12.6_
 
-- [ ] 4. Implement queue management service layer
-  - [ ] 4.1 Create QueueService
+- [x] 4. Implement queue management service layer
+  - [x] 4.1 Create QueueService
     - Implement resolveQueueUrl method (handles both queue names and URLs)
     - Implement getQueueAttributes method
     - Implement extractDlqFromAttributes method (parse RedrivePolicy JSON)
@@ -110,8 +110,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test invalid queue URL format
     - _Requirements: 1.3, 13.1, 13.4_
 
-- [ ] 5. Implement message operations service layer
-  - [ ] 5.1 Create MessageService
+- [-] 5. Implement message operations service layer
+  - [x] 5.1 Create MessageService
     - Implement receiveMessages method with configurable parameters (maxMessages, visibilityTimeout, waitTimeSeconds)
     - Implement sendMessage method with message attributes and delay seconds
     - Implement deleteMessage method using receipt handle
@@ -154,8 +154,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
 - [ ] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement redrive operations service layer
-  - [ ] 7.1 Create RedriveService
+- [x] 7. Implement redrive operations service layer
+  - [x] 7.1 Create RedriveService
     - Implement redrive operation: receive from DLQ, send to main queue, delete from DLQ
     - Add transactional behavior (only delete from DLQ if send succeeds)
     - Track operation progress (processed count, success count, failure count)
@@ -173,8 +173,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test complete failure scenario
     - _Requirements: 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 8. Implement REST controllers
-  - [ ] 8.1 Create QueueController
+- [x] 8. Implement REST controllers
+  - [x] 8.1 Create QueueController
     - POST /api/queues - Add queue by name or URL
     - GET /api/queues - Get all saved queues
     - GET /api/queues/{queueId} - Get queue details
@@ -184,7 +184,7 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Return appropriate HTTP status codes
     - _Requirements: 1.1, 1.2, 1.3, 1.6, 1.7, 9.2, 9.3, 9.4, 12.5_
   
-  - [ ] 8.2 Create MessageController
+  - [x] 8.2 Create MessageController
     - GET /api/queues/{queueId}/messages - Receive messages with query parameters
     - POST /api/queues/{queueId}/messages - Send message
     - DELETE /api/queues/{queueId}/messages/{receiptHandle} - Delete message
@@ -192,12 +192,12 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Add request validation and error handling
     - _Requirements: 4.1, 4.2, 6.2, 6.4, 6.5, 7.4, 7.5, 7.6, 10.2, 10.4, 10.5_
   
-  - [ ] 8.3 Create RedriveController
+  - [x] 8.3 Create RedriveController
     - POST /api/queues/{queueId}/redrive - Redrive messages from DLQ
     - Return operation results with counts and errors
     - _Requirements: 8.1, 8.6_
   
-  - [ ] 8.4 Create ConfigController
+  - [x] 8.4 Create ConfigController
     - GET /api/config/profiles - Get available AWS profiles
     - POST /api/config/profile - Set active AWS profile
     - GET /api/config/test-credentials - Test AWS credentials
@@ -209,8 +209,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test redrive operation flow
     - _Requirements: 1.1, 1.2, 4.1, 6.2, 8.2_
 
-- [ ] 9. Implement global error handling
-  - [ ] 9.1 Create GlobalExceptionHandler
+- [-] 9. Implement global error handling
+  - [x] 9.1 Create GlobalExceptionHandler
     - Handle AWS SDK exceptions (QueueDoesNotExist, AccessDenied, etc.)
     - Handle validation exceptions
     - Handle authentication exceptions
@@ -233,8 +233,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
 - [ ] 10. Checkpoint - Ensure backend tests pass
   - Ensure all backend tests pass, ask the user if questions arise.
 
-- [ ] 11. Implement frontend API client
-  - [ ] 11.1 Create ApiClient service
+- [x] 11. Implement frontend API client
+  - [x] 11.1 Create ApiClient service
     - Implement wrapper methods for all backend API endpoints
     - Add error handling and response parsing
     - Implement loading state management
@@ -247,8 +247,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test retry logic
     - _Requirements: 11.5, 13.2_
 
-- [ ] 12. Implement frontend state management
-  - [ ] 12.1 Create stores for application state
+- [x] 12. Implement frontend state management
+  - [x] 12.1 Create stores for application state
     - Create queue list store using Svelte 5 $state rune
     - Create selected queue store
     - Create messages store
@@ -262,8 +262,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test derived state calculations
     - _Requirements: 11.2_
 
-- [ ] 13. Implement QueueList component
-  - [ ] 13.1 Create QueueList component
+- [-] 13. Implement QueueList component
+  - [x] 13.1 Create QueueList component
     - Display all saved queues with names and basic attributes
     - Add "Add Queue" button and form (input for queue name/URL, region selector)
     - Add "Remove Queue" button for each queue
@@ -280,8 +280,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test queue selection
     - _Requirements: 1.1, 1.2, 12.4, 12.5_
 
-- [ ] 14. Implement QueueDetails component
-  - [ ] 14.1 Create QueueDetails component
+- [x] 14. Implement QueueDetails component
+  - [x] 14.1 Create QueueDetails component
     - Display detailed queue attributes (message counts, timeouts, retention)
     - Display DLQ information if configured
     - Add "Purge Queue" button with confirmation dialog
@@ -295,8 +295,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test purge operation
     - _Requirements: 1.6, 9.1, 9.5_
 
-- [ ] 15. Implement MessageViewer component
-  - [ ] 15.1 Create MessageViewer component
+- [x] 15. Implement MessageViewer component
+  - [x] 15.1 Create MessageViewer component
     - Display list of messages with message ID, body, and attributes
     - Implement JSON pretty-printing with syntax highlighting
     - Add toggle between raw and formatted views
@@ -319,8 +319,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test pagination
     - _Requirements: 4.2, 4.4, 7.4, 10.1_
 
-- [ ] 16. Implement message search and filtering
-  - [ ] 16.1 Add search functionality to MessageViewer
+- [x] 16. Implement message search and filtering
+  - [x] 16.1 Add search functionality to MessageViewer
     - Add search input field
     - Implement client-side filtering by message body content
     - Implement filtering by message attributes
@@ -335,8 +335,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test empty results display
     - _Requirements: 5.1, 5.2, 5.3, 5.5_
 
-- [ ] 17. Implement MessageComposer component
-  - [ ] 17.1 Create MessageComposer component
+- [x] 17. Implement MessageComposer component
+  - [x] 17.1 Create MessageComposer component
     - Add text area for message body
     - Add JSON validation toggle and validation logic
     - Add message attributes editor (key-value pairs)
@@ -358,8 +358,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test send message interaction
     - _Requirements: 6.1, 6.2, 6.3, 6.6_
 
-- [ ] 18. Implement RedrivePanel component
-  - [ ] 18.1 Create RedrivePanel component
+- [x] 18. Implement RedrivePanel component
+  - [x] 18.1 Create RedrivePanel component
     - Display DLQ message count
     - Add "Redrive Single Message" button
     - Add "Redrive All Messages" button with confirmation
@@ -375,8 +375,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test results display
     - _Requirements: 8.1, 8.6, 8.7_
 
-- [ ] 19. Implement SettingsPanel component
-  - [ ] 19.1 Create SettingsPanel component
+- [x] 19. Implement SettingsPanel component
+  - [x] 19.1 Create SettingsPanel component
     - Display available AWS profiles in dropdown
     - Add profile selection functionality
     - Display current credential status (valid/invalid, account ID, method)
@@ -390,8 +390,8 @@ This implementation plan breaks down the SQS Management Tool into discrete codin
     - Test credential testing
     - _Requirements: 2.5, 2.6_
 
-- [ ] 20. Implement main application layout and routing
-  - [ ] 20.1 Create main App component
+- [x] 20. Implement main application layout and routing
+  - [x] 20.1 Create main App component
     - Set up application layout (sidebar with queue list, main content area)
     - Wire together all components (QueueList, QueueDetails, MessageViewer, etc.)
     - Implement component visibility logic based on selected queue
