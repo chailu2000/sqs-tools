@@ -1,0 +1,128 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Fault Condition** - Selective Redrive Uses Original Receipt Handles
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases: selective redrive with visibility timeout conflicts
+  - Test that selective redrive uses receipt handles from original load (not from fresh receive)
+  - Test that detailed success/failure feedback is provided for each message
+  - Test that UI updates correctly based on actual results (not prematurely)
+  - Test that only successfully redriven messages are removed from DLQ table
+  - The test assertions should match the Expected Behavior Properties from design
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists)
+  - Document counterexamples found:
+    - Message ID mismatches causing "Message not found" errors
+    - Silent failures with no user feedback
+    - UI clearing incorrectly after failed operations
+    - Partial success scenarios showing incorrect state
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Non-Selective Operations Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-selective-redrive operations:
+    - "Redrive All" processes all DLQ messages in batches
+    - Message loading displays all available messages with attributes
+    - Main queue operations (deletion, visibility timeout) work correctly
+    - Atomic operations (delete from DLQ only if send succeeds) are preserved
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements
+  - Property-based testing generates many test cases for stronger guarantees
+  - Test cases:
+    - Redrive All continues to process messages in batches
+    - DLQ message loading displays all attributes correctly
+    - Main queue deletion and visibility timeout operations remain unaffected
+    - Messages are deleted from DLQ only after successful send to main queue
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 3. Fix for DLQ selective redrive visibility timeout conflict
+
+  - [x] 3.1 Update frontend to store and pass receipt handles
+    - Modify message state in DLQTab component to include receipt handles alongside message IDs
+    - Store receipt handles when messages are initially loaded from the DLQ
+    - Update selective redrive API call to include receipt handles in request payload
+    - Change request format from `{ messageIds: string[] }` to `{ messages: Array<{ messageId: string, receiptHandle: string }> }`
+    - _Bug_Condition: isBugCondition(input) where input.operation == "selective_redrive" AND input.receiptHandles == null_
+    - _Expected_Behavior: System uses receipt handles from original load without re-receiving messages_
+    - _Preservation: Main queue operations and message loading remain unchanged_
+    - _Requirements: 2.1, 3.3, 3.4_
+
+  - [x] 3.2 Update frontend to handle detailed success/failure response
+    - Modify response handler to process per-message success/failure status
+    - Update UI to remove only successfully redriven messages from DLQ table
+    - Keep failed messages visible with error indicators
+    - Display detailed feedback showing count of succeeded/failed messages
+    - Handle edge cases (all succeed, all fail, empty selection)
+    - _Bug_Condition: isBugCondition(input) where selectedMessagesStillUnderVisibilityTimeout(input.messageIds)_
+    - _Expected_Behavior: UI updates correctly based on actual results, showing detailed feedback_
+    - _Preservation: DLQ message display and filtering remain unchanged_
+    - _Requirements: 2.2, 2.3, 2.4, 2.5, 3.3_
+
+  - [x] 3.3 Update backend to accept receipt handles
+    - Modify selective redrive endpoint to accept receipt handles in request body
+    - Update request schema to expect `{ messages: Array<{ messageId: string, receiptHandle: string }> }`
+    - Add validation for receipt handle presence
+    - _Bug_Condition: isBugCondition(input) where input.receiptHandles == null AND input.messageIds != null_
+    - _Expected_Behavior: Backend accepts and uses provided receipt handles_
+    - _Preservation: "Redrive All" endpoint and batch processing remain unchanged_
+    - _Requirements: 2.1, 3.1, 3.2_
+
+  - [x] 3.4 Remove backend re-receive logic and use provided receipt handles
+    - Eliminate the `receiveMessage` call that attempts to get fresh messages from DLQ
+    - Use receipt handles from request directly for `deleteMessage` operations
+    - Maintain atomic operations (delete from DLQ only after successful send to main queue)
+    - _Bug_Condition: isBugCondition(input) where backend performs fresh receiveMessage causing visibility timeout conflict_
+    - _Expected_Behavior: Backend uses provided receipt handles without re-receiving_
+    - _Preservation: Atomic operations and "Redrive All" batch processing remain unchanged_
+    - _Requirements: 2.1, 3.1, 3.2, 3.5_
+
+  - [x] 3.5 Update backend to return detailed per-message results
+    - Modify response to include per-message success/failure status
+    - Return format: `{ succeeded: Array<{ messageId: string }>, failed: Array<{ messageId: string, error: string }> }`
+    - Include specific error messages for each failed message
+    - Handle partial success scenarios correctly
+    - _Bug_Condition: isBugCondition(input) where system shows generic success message despite failures_
+    - _Expected_Behavior: System provides detailed error information for each failed message_
+    - _Preservation: "Redrive All" response format remains unchanged_
+    - _Requirements: 2.2, 2.3, 2.5, 3.1, 3.2_
+
+  - [x] 3.6 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Selective Redrive Uses Original Receipt Handles
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - Verify that:
+      - Selective redrive uses receipt handles from original load
+      - Detailed success/failure feedback is provided
+      - UI updates correctly based on actual results
+      - Only successfully redriven messages are removed from table
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+  - [x] 3.7 Verify preservation tests still pass
+    - **Property 2: Preservation** - Non-Selective Operations Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix:
+      - "Redrive All" continues to process messages in batches
+      - Message loading displays all attributes correctly
+      - Main queue operations remain unaffected
+      - Atomic operations are preserved
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Run all unit tests for frontend and backend changes
+  - Run all property-based tests for fault condition and preservation
+  - Run integration tests for full selective redrive flow
+  - Verify edge cases (all succeed, all fail, empty selection, visibility timeout scenarios)
+  - Confirm no regressions in "Redrive All", message loading, or main queue operations
+  - Ask the user if questions arise
