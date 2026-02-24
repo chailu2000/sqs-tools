@@ -103,12 +103,14 @@ class ApiClient {
             maxMessages?: number;
             visibilityTimeout?: number;
             waitTimeSeconds?: number;
+            peek?: boolean;
         }
     ): Promise<Message[]> {
         const queryParams = new URLSearchParams();
         if (params?.maxMessages) queryParams.set('maxMessages', params.maxMessages.toString());
         if (params?.visibilityTimeout) queryParams.set('visibilityTimeout', params.visibilityTimeout.toString());
         if (params?.waitTimeSeconds) queryParams.set('waitTimeSeconds', params.waitTimeSeconds.toString());
+        if (params?.peek) queryParams.set('peek', 'true');
 
         const query = queryParams.toString();
         return this.request(`/queues/${queueId}/messages${query ? `?${query}` : ''}`);
@@ -170,11 +172,13 @@ class ApiClient {
         params?: {
             maxMessages?: number;
             visibilityTimeout?: number;
+            peek?: boolean;
         }
     ): Promise<Message[]> {
         const queryParams = new URLSearchParams();
         if (params?.maxMessages) queryParams.set('maxMessages', params.maxMessages.toString());
         if (params?.visibilityTimeout) queryParams.set('visibilityTimeout', params.visibilityTimeout.toString());
+        if (params?.peek) queryParams.set('peek', 'true');
 
         const query = queryParams.toString();
         return this.request(`/queues/${queueId}/dlq/messages${query ? `?${query}` : ''}`);

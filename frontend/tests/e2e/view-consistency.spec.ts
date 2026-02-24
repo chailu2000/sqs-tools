@@ -145,4 +145,57 @@ test.describe('View Mode Consistency', () => {
         expect(await messagePage.getViewMode()).toBe('cards');
         await expect(page.locator(messagePage.messageViewer)).toBeVisible();
     });
+
+    test('10.4 [property] view mode persists across arbitrary sequences of tab switches', async ({ page }) => {
+        // Property: for any sequence of tab switches, view mode set before the sequence is preserved afterwards.
+        // We run a small deterministic set that covers the property exhaustively given the state space.
+        await queuePage.selectQueue(queueA);
+
+        const viewModes: Array<'cards' | 'table'> = ['table', 'cards'];
+        // DLQ tab requires queueA (which has a DLQ). 'main' is always available.
+        const tabs: Array<'main' | 'dlq'> = ['dlq', 'main', 'dlq', 'main'];
+
+        for (const startMode of viewModes) {
+            // Set initial view mode
+            await messagePage.setViewMode(startMode);
+
+            // Run through tab sequence
+            for (const tab of tabs) {
+                await messagePage.switchTab(tab);
+                // Property: view mode must equal startMode after every switch
+                const currentMode = await messagePage.getViewMode();
+                expect(currentMode, `After switching to tab "${tab}", view mode should remain "${startMode}" but was "${currentMode}"`).toBe(startMode);
+            }
+
+            // Return to main for next iteration
+            await messagePage.switchTab('main');
+        }
+    });
+
+    test('10.5 [property] view mode persists across arbitrary sequences of queue selections', async ({ page }) => {
+        // Property: for any sequence of queue selections, view mode is preserved.
+        // We test all combinations: both view modes × multiple queue-switch sequences.
+        await queuePage.selectQueue(queueA);
+
+        const viewModes: Array<'cards' | 'table'> = ['table', 'cards'];
+        const queueSequences = [
+            [queueB, queueA, queueB],
+            [queueA, queueB, queueA],
+        ];
+
+        for (const startMode of viewModes) {
+            await messagePage.setViewMode(startMode);
+
+            for (const sequence of queueSequences) {
+                for (const q of sequence) {
+                    await queuePage.selectQueue(q);
+                    const currentMode = await messagePage.getViewMode();
+                    expect(
+                        currentMode,
+                        `After selecting queue "${q}", view mode should remain "${startMode}" but was "${currentMode}"`
+                    ).toBe(startMode);
+                }
+            }
+        }
+    });
 });

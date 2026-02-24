@@ -11,6 +11,7 @@
     let maxMessages = $state(10);
     let visibilityTimeout = $state(30);
     let waitTimeSeconds = $state(20); // Use max long polling by default
+    let peek = $state(true); // Enabled by default as it's the desired behavior for this tool
     let activeTab = $state<"queue" | "main" | "dlq">("main");
     let polling = $state(false);
     let pollCount = $state(0);
@@ -63,6 +64,7 @@
                         maxMessages,
                         visibilityTimeout,
                         waitTimeSeconds,
+                        peek,
                     },
                 );
                 store.setMessages(messages);
@@ -76,6 +78,7 @@
                     {
                         maxMessages,
                         visibilityTimeout,
+                        peek,
                     },
                 );
                 store.setDlqMessages(messages);
@@ -143,6 +146,7 @@
                         maxMessages: 10,
                         visibilityTimeout,
                         waitTimeSeconds: 20,
+                        peek,
                     });
                 } else {
                     if (!store.selectedQueue.dlqUrl) {
@@ -156,6 +160,7 @@
                         {
                             maxMessages: 10,
                             visibilityTimeout,
+                            peek,
                         },
                     );
                 }
@@ -476,7 +481,6 @@
                         class="input-small"
                     />
                 </label>
-
                 <label>
                     Wait Time (s):
                     <input
@@ -486,6 +490,11 @@
                         max="20"
                         class="input-small"
                     />
+                </label>
+
+                <label class="checkbox-label" title="Immediately reset visibility timeout to 0 so message stays available for other consumers">
+                    <input type="checkbox" bind:checked={peek} />
+                    Peek Mode (keep available)
                 </label>
 
                 <button
@@ -537,7 +546,7 @@
             💡 <strong>Poll for Messages:</strong> Continuously receives for up
             to {pollDuration}s (like AWS Console).
             <strong>Receive Once:</strong> Gets a single batch. Messages are deduplicated
-            by ID.
+            by ID. <strong>Peek Mode:</strong> Immediately resets visibility timeout to 0.
         </div>
 
         {#if error}
@@ -1096,6 +1105,21 @@
         text-align: center;
         padding: 3rem;
         color: #999;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        user-select: none;
+    }
+
+    .checkbox-label input {
+        width: 1.2rem;
+        height: 1.2rem;
+        cursor: pointer;
     }
 
     .pagination {

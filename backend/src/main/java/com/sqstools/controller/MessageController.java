@@ -27,7 +27,8 @@ public class MessageController {
             @PathVariable String queueId,
             @RequestParam(required = false) Integer maxMessages,
             @RequestParam(required = false) Integer visibilityTimeout,
-            @RequestParam(required = false) Integer waitTimeSeconds) {
+            @RequestParam(required = false) Integer waitTimeSeconds,
+            @RequestParam(required = false, defaultValue = "false") boolean peek) {
 
         QueueConfiguration config = configService.loadQueue(queueId)
                 .orElseThrow(() -> new RuntimeException("Queue not found"));
@@ -37,7 +38,8 @@ public class MessageController {
                 config.getRegion(),
                 maxMessages,
                 visibilityTimeout,
-                waitTimeSeconds);
+                waitTimeSeconds,
+                peek);
 
         List<Map<String, Object>> response = new ArrayList<>();
         for (Message message : messages) {
