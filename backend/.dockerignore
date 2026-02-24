@@ -1,0 +1,19 @@
+# Exclude build output (Docker builds the jar itself)
+build/
+.gradle/
+*.class
+
+# Exclude test sources (not needed in the image)
+src/test/
+
+# Exclude editor/IDE files
+.vscode/
+.idea/
+*.iml
+
+# Exclude git metadata
+.git/
+.gitignore
+
+# Exclude this file
+.dockerignore

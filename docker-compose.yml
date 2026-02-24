@@ -1,0 +1,55 @@
+services:
+  # ──────────────────────────────────────────────
+  # Backend — Spring Boot + SQLite
+  # ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # AWS credentials — set in .env or pass as shell env vars
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+    volumes:
+      # Persist the SQLite database across container restarts
+      - sqlite-data:/app/data
+      # Optional: mount your host AWS credentials for named profile support
+      # Comment this line out if you prefer to use env vars instead.
+      - ${HOME}/.aws:/root/.aws:ro
+    # Only expose the backend port to other Docker services (not to the host).
+    # To reach the API directly on the host, change to "8080:8080".
+    expose:
+      - "8080"
+    healthcheck:
+      # Use nc (netcat) to check TCP connectivity — no actuator dep required
+      test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ──────────────────────────────────────────────
+  # Frontend — Nginx serving the Svelte SPA
+  # ──────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      # Using 8081 to avoid macOS privileged-port restriction (port 80 requires sudo)
+      # App is accessible at http://localhost:8081
+      - "8081:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ──────────────────────────────────────────────
+# Volumes
+# ──────────────────────────────────────────────
+volumes:
+  sqlite-data:
+    driver: local

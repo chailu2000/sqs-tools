@@ -1,0 +1,22 @@
+# Exclude local node_modules (Docker installs its own)
+node_modules/
+
+# Exclude previous build output (Docker builds fresh)
+dist/
+build/
+
+# Exclude test artifacts
+tests/
+playwright-report/
+test-results/
+
+# Exclude editor/IDE files
+.vscode/
+.idea/
+
+# Exclude git metadata
+.git/
+.gitignore
+
+# Exclude this file
+.dockerignore

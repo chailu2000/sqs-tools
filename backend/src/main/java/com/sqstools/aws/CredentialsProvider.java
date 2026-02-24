@@ -26,19 +26,21 @@ public class CredentialsProvider {
         if (hasEnvironmentVariables()) {
             return EnvironmentVariableCredentialsProvider.create();
         }
-        
+
         if (activeProfile != null) {
             return ProfileCredentialsProvider.builder()
                     .profileName(activeProfile)
                     .build();
         }
-        
+
         return DefaultCredentialsProvider.create();
     }
 
     private boolean hasEnvironmentVariables() {
-        return System.getenv("AWS_ACCESS_KEY_ID") != null 
-                && System.getenv("AWS_SECRET_ACCESS_KEY") != null;
+        String keyId = System.getenv("AWS_ACCESS_KEY_ID");
+        String secret = System.getenv("AWS_SECRET_ACCESS_KEY");
+        return keyId != null && !keyId.isBlank()
+                && secret != null && !secret.isBlank();
     }
 
     public AwsCredentialsProvider getCredentialsProvider() {
@@ -57,8 +59,8 @@ public class CredentialsProvider {
     public boolean validateCredentials() {
         try {
             AwsCredentials credentials = credentialsProvider.resolveCredentials();
-            return credentials != null 
-                    && credentials.accessKeyId() != null 
+            return credentials != null
+                    && credentials.accessKeyId() != null
                     && !credentials.accessKeyId().isEmpty();
         } catch (Exception e) {
             return false;
@@ -70,10 +72,9 @@ public class CredentialsProvider {
                 .credentialsProvider(credentialsProvider)
                 .region(Region.US_EAST_1)
                 .build()) {
-            
+
             GetCallerIdentityResponse response = stsClient.getCallerIdentity(
-                    GetCallerIdentityRequest.builder().build()
-            );
+                    GetCallerIdentityRequest.builder().build());
             return Optional.of(response.account());
         } catch (Exception e) {
             return Optional.empty();

@@ -13,3 +13,9 @@ Thumbs.db
 # Application data
 .sqs-tools/
 data/
+
+# Environment / secrets (use .env.example as the template)
+.env
+
+# Docker build artefacts
+.docker/
