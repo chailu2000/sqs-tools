@@ -1,6 +1,8 @@
 # SQS Management Tool
 
-A locally-running web application for managing and visualizing AWS SQS queues. This tool provides a user-friendly interface to interact with your SQS queues, send and receive messages, manage dead letter queues, and more.
+A locally-running web application for inspecting and managing AWS SQS queues without requiring ListQueues permission. This tool provides a user-friendly interface to interact with your SQS queues, send and receive messages, manage dead letter queues, and more.
+
+This tool is especially useful as an interactive GUI for environments where AWS Console access is restricted or where `ListQueues` IAM permission is not granted, which is a common limitation for other SQS management tools and IDE plugins. It allows developers to effectively manage and view queue messages and details directly.
 
 ## Features
 
@@ -12,6 +14,8 @@ A locally-running web application for managing and visualizing AWS SQS queues. T
 - ⚙️ **AWS Profile Management**: Switch between AWS profiles and test credentials
 - 💾 **Persistent Configuration**: Queue configurations saved locally in SQLite
 - 🌓 **Dark Mode**: Automatic dark mode support
+- 🚫 **No ListQueues Required**: Add queues by name or URL without needing ListQueues IAM permission
+- 🔐 **Minimal IAM Permissions**: Works with restricted IAM policies
 
 ## Project Structure
 
@@ -107,6 +111,7 @@ Navigate to `http://localhost:5173` in your browser.
    - Full queue URL (e.g., `https://sqs.us-east-1.amazonaws.com/123456789012/my-queue`)
 3. Select the AWS region
 4. Click "Add"
+
 
 ### Sending Messages
 
@@ -232,7 +237,7 @@ The application uses SQLite for persistent storage:
 
 ## AWS Permissions Required
 
-The application requires the following AWS IAM permissions:
+The application requires the following AWS IAM permissions. Note that `sqs:ListQueues` is **NOT required** - queues are added manually by name or URL.
 
 ```json
 {
@@ -243,7 +248,6 @@ The application requires the following AWS IAM permissions:
       "Action": [
         "sqs:GetQueueUrl",
         "sqs:GetQueueAttributes",
-        "sqs:ListQueues",
         "sqs:SendMessage",
         "sqs:ReceiveMessage",
         "sqs:DeleteMessage",

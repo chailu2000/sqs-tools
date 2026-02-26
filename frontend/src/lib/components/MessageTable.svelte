@@ -417,23 +417,29 @@
     }
 
     $effect(() => {
-        // Only auto-load once per tab when first switching to a message tab
-        // Don't auto-load after polling stops or on subsequent reactive updates
-        if (
-            activeTab === "main" &&
-            !hasLoadedMain &&
-            store.messages.length === 0
-        ) {
-            hasLoadedMain = true;
+        // load whenever queue selection changes
+        if (store.selectedQueue) {
+            currentPage = 1; // Reset pagination when queue or tab changes
             loadMessages();
-        }
-        if (
-            activeTab === "dlq" &&
-            !hasLoadedDlq &&
-            store.dlqMessages.length === 0
-        ) {
-            hasLoadedDlq = true;
-            loadMessages();
+        } else {
+            // Only auto-load once per tab when first switching to a message tab
+            // Don't auto-load after polling stops or on subsequent reactive updates
+            if (
+                activeTab === "main" &&
+                !hasLoadedMain &&
+                store.messages.length === 0
+            ) {
+                hasLoadedMain = true;
+                loadMessages();
+            }
+            if (
+                activeTab === "dlq" &&
+                !hasLoadedDlq &&
+                store.dlqMessages.length === 0
+            ) {
+                hasLoadedDlq = true;
+                loadMessages();
+            }
         }
     });
 </script>
