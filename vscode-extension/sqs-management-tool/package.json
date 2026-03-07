@@ -1,0 +1,158 @@
+{
+  "name": "sqs-management-tool",
+  "displayName": "SQS Management Tool",
+  "description": "VS Code extension for managing AWS SQS queues.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:sqsManagementQueues",
+    "onCommand:sqs-management-tool.selectAwsProfile"
+  ],
+  "main": "./out/extension-standalone.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sqs-management-tool.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "sqs-management-tool.refreshQueues",
+        "title": "Refresh Queues",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sqs-management-tool.selectQueue",
+        "title": "Select SQS Queue"
+      },
+      {
+        "command": "sqs-management-tool.selectAwsProfile",
+        "title": "Select AWS Profile"
+      },
+      {
+        "command": "sqs-management-tool.addQueue",
+        "title": "Add SQS Queue"
+      },
+      {
+        "command": "sqs-management-tool.removeQueue",
+        "title": "Remove SQS Queue"
+      },
+      {
+        "command": "sqs-management-tool.refreshAttributes",
+        "title": "Refresh Queue Attributes",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "sqs-management-tool.copyQueueUrl",
+        "title": "Copy Queue URL",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "sqs-management-tool.exportQueues",
+        "title": "Export Queue Configurations",
+        "icon": "$(export)"
+      },
+      {
+        "command": "sqs-management-tool.importQueues",
+        "title": "Import Queue Configurations",
+        "icon": "$(import)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "sqsManagementQueues",
+          "name": "SQS Queues"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "sqs-management-tool.refreshQueues",
+          "when": "view == sqsManagementQueues",
+          "group": "navigation"
+        },
+        {
+          "command": "sqs-management-tool.addQueue",
+          "when": "view == sqsManagementQueues",
+          "group": "navigation",
+          "icon": "$(add)"
+        },
+        {
+          "command": "sqs-management-tool.exportQueues",
+          "when": "view == sqsManagementQueues",
+          "group": "navigation"
+        },
+        {
+          "command": "sqs-management-tool.importQueues",
+          "when": "view == sqsManagementQueues",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sqs-management-tool.removeQueue",
+          "when": "view == sqsManagementQueues && viewItem == queueItem",
+          "group": "inline"
+        },
+        {
+          "command": "sqs-management-tool.refreshAttributes",
+          "when": "view == sqsManagementQueues && viewItem == queueItem",
+          "group": "queue@1"
+        },
+        {
+          "command": "sqs-management-tool.copyQueueUrl",
+          "when": "view == sqsManagementQueues && viewItem == queueItem",
+          "group": "queue@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "compile:e2e": "tsc -p ./tsconfig.e2e.json",
+    "watch": "tsc -watch -p ./",
+    "pretest": "pnpm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "pnpm run compile && pnpm run compile:e2e && node ./out/tests/e2e/runTests.js",
+    "test:e2e:headed": "HEADED=true pnpm run test:e2e",
+    "test:e2e:ci": "CI=true pnpm run test:e2e",
+    "test:e2e:coverage": "c8 --reporter=html --reporter=json --reporter=lcov pnpm run test:e2e:ci",
+    "test:e2e:debug": "node --inspect-brk ./out/tests/e2e/runTests.js",
+    "verify": "bash scripts/verify-implementation.sh"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.3",
+    "@types/glob": "^9.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^18.19.26",
+    "@types/vscode": "^1.88.0",
+    "@typescript-eslint/eslint-plugin": "^7.6.0",
+    "@typescript-eslint/parser": "^7.6.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "c8": "^11.0.0",
+    "chai": "^6.2.2",
+    "eslint": "^8.57.0",
+    "glob": "^13.0.6",
+    "jest": "^30.2.0",
+    "mocha": "^11.7.5",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1000.0",
+    "@aws-sdk/client-sts": "^3.1000.0",
+    "@aws-sdk/credential-providers": "^3.1000.0"
+  }
+}
