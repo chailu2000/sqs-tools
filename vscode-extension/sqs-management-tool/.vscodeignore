@@ -1,0 +1,99 @@
+# Development files
+.vscode/**
+.vscode-test/**
+src/**
+tests/**
+test-results/**
+playwright-report/**
+out/tests/**
+*.test.ts
+*.spec.ts
+**/test/**
+**/__tests__/**
+
+# Build configuration
+.gitignore
+.eslintrc.json
+.eslintrc.js
+tsconfig.json
+tsconfig.e2e.json
+jest.config.js
+jest.setup.js
+.prettierrc
+.prettierignore
+
+# Scripts
+scripts/**
+*.sh
+*.py
+
+# Documentation (exclude development docs, keep user docs)
+ARCHITECTURE.md
+DEBUG_*.md
+E2E_TEST_*.md
+IMPLEMENTATION_*.md
+STANDALONE_*.md
+TASK_*.md
+TESTING.md
+TEST_STATUS.md
+VERIFICATION_*.md
+AI_DEVELOPMENT_DISCLOSURE.md
+CONTRIBUTING.md
+ICON_CREATION_GUIDE.md
+PUBLISHING_CHECKLIST.md
+PUBLISHING_GUIDE.md
+PUBLISHING_MANUAL_STEPS.md
+PUBLISHING_PREPARATION_SUMMARY.md
+
+# Test files
+docker-compose.test.yml
+test-*.js
+*.test.js
+*.spec.js
+
+# Logs and temporary files
+*.log
+*.tmp
+.DS_Store
+output.html
+
+# Package manager files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Source maps (not needed in production)
+**/*.js.map
+
+# Git
+.git/**
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/**
+
+# Node modules (if using --no-dependencies)
+node_modules/**
+
+# Unused extension entry points (we only use extension-standalone.js)
+out/extension.js
+out/extension.js.map
+out/extension-svelte.js
+out/extension-svelte.js.map
+out/api.js
+out/api.js.map
+
+# Keep these essential files
+!README.md
+!CHANGELOG.md
+!LICENSE
+!MANUAL_TESTING_MESSAGE_ATTRIBUTES.md
+!QUICK_START_ATTRIBUTES.md
+!MESSAGE_ATTRIBUTES_DOCS.md
+!BODY_VS_ATTRIBUTES_EXPLAINED.md
+!ATTRIBUTE_UI_EXAMPLE.md
+!TROUBLESHOOTING.md
+!SECURITY.md
+!IAM_PERMISSIONS.md
+!MANUAL_TESTING_GUIDE.md

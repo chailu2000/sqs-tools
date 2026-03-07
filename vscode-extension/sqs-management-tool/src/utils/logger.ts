@@ -10,12 +10,21 @@ import { sanitizeForLog, sanitizeError } from './sanitizer';
 
 /**
  * Safe logger that sanitizes all output to prevent credential leakage
+ * 
+ * NOTE: Console logging is disabled in production to reduce noise.
+ * To enable logging for debugging, set the environment variable:
+ * VSCODE_SQS_DEBUG=true
  */
 export class SafeLogger {
+    private static isDebugEnabled(): boolean {
+        return process.env.VSCODE_SQS_DEBUG === 'true';
+    }
+
     /**
      * Logs an informational message with sanitized data
      */
     static log(...args: any[]): void {
+        if (!this.isDebugEnabled()) return;
         const sanitizedArgs = args.map(arg => sanitizeForLog(arg));
         console.log(...sanitizedArgs);
     }
@@ -24,6 +33,7 @@ export class SafeLogger {
      * Logs an error message with sanitized data
      */
     static error(...args: any[]): void {
+        if (!this.isDebugEnabled()) return;
         const sanitizedArgs = args.map(arg => {
             if (arg instanceof Error) {
                 return sanitizeError(arg);
@@ -37,6 +47,7 @@ export class SafeLogger {
      * Logs a warning message with sanitized data
      */
     static warn(...args: any[]): void {
+        if (!this.isDebugEnabled()) return;
         const sanitizedArgs = args.map(arg => sanitizeForLog(arg));
         console.warn(...sanitizedArgs);
     }
@@ -45,6 +56,7 @@ export class SafeLogger {
      * Logs an info message with sanitized data
      */
     static info(...args: any[]): void {
+        if (!this.isDebugEnabled()) return;
         const sanitizedArgs = args.map(arg => sanitizeForLog(arg));
         console.info(...sanitizedArgs);
     }
@@ -53,6 +65,7 @@ export class SafeLogger {
      * Logs a debug message with sanitized data
      */
     static debug(...args: any[]): void {
+        if (!this.isDebugEnabled()) return;
         const sanitizedArgs = args.map(arg => sanitizeForLog(arg));
         console.debug(...sanitizedArgs);
     }

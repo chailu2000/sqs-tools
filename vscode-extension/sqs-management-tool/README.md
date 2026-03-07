@@ -1,6 +1,33 @@
 # SQS Management Tool for VS Code
 
+[![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Assistance-blue?logo=robot)](AI_DEVELOPMENT_DISCLOSURE.md)
+[![Spec-Driven](https://img.shields.io/badge/Development-Spec%20Driven-green)](.kiro/specs/)
+[![Property-Based Testing](https://img.shields.io/badge/Testing-Property%20Based-orange)](vscode-extension/sqs-management-tool/src/services/__tests__/)
+
 A standalone VS Code extension for managing AWS SQS queues directly from your IDE. No backend required - communicates directly with AWS SQS using the AWS SDK.
+
+## Screenshots
+
+### Queue Management
+View queue details including message counts, DLQ configuration, and queue attributes.
+
+![Queue Information](images/queue-info.png)
+
+### Message Composer
+Send messages with custom attributes supporting all AWS SQS data types.
+
+![Message Composer](images/message-composer.png)
+
+### Message Details
+View complete message details including body, attributes, and metadata.
+
+![Message Details](images/message-details.png)
+
+### DLQ Redrive
+Move messages from Dead Letter Queues back to source queues with progress tracking.
+
+![DLQ Redrive](images/dlq-redrive.png)
+
 
 ## Features
 
@@ -218,6 +245,19 @@ By default, queues are stored globally across all workspaces. You can switch to 
 - Maximum 10 messages can be received per request (AWS SQS limitation)
 - Message body size limited to 256 KB (AWS SQS limitation)
 - Purge operation limited to once per 60 seconds per queue (AWS SQS limitation)
+
+## Development
+
+This extension was built using modern AI-assisted development practices with [Kiro](https://kiro.ai), featuring:
+
+- **Spec-Driven Development**: All features defined in formal specifications (see `.kiro/specs/`)
+- **Property-Based Testing**: Correctness verified through systematic testing
+- **AI Collaboration**: Enhanced productivity while maintaining high code quality
+- **Comprehensive Documentation**: Auto-generated docs with human refinement
+
+This approach enabled rapid development of a production-ready extension with extensive test coverage and documentation.
+
+**Interested in the methodology?** Check out our [spec files](.kiro/specs/) to see the development process in action, or read about [AI-assisted development](AI_DEVELOPMENT_DISCLOSURE.md) for more details.
 
 ## Support
 

@@ -1,17 +1,54 @@
 {
   "name": "sqs-management-tool",
-  "displayName": "SQS Management Tool",
-  "description": "VS Code extension for managing AWS SQS queues.",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.88.0"
+  "displayName": "AWS SQS Management Tool",
+  "description": "Manage AWS SQS queues directly from VS Code. Send, receive, and monitor messages without leaving your IDE.",
+  "version": "1.0.0",
+  "publisher": "chailu2000",
+  "author": {
+    "name": "Lu Chai",
+    "email": "chailu2000@gmail.com"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chailu2000/sqs-tools/tree/main/vscode-extension/sqs-management-tool"
+  },
+  "bugs": {
+    "url": "https://github.com/chailu2000/sqs-tools/tree/main/vscode-extension/sqs-management-tool/issues"
+  },
+  "homepage": "https://github.com/chailu2000/sqs-tools/tree/main/vscode-extension/sqs-management-tool#readme",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#232F3E",
+    "theme": "dark"
+  },
+  "keywords": [
+    "aws",
+    "sqs",
+    "queue",
+    "message queue",
+    "amazon",
+    "cloud",
+    "devops",
+    "messaging",
+    "dlq",
+    "dead letter queue",
+    "fifo",
+    "standard queue",
+    "aws-sdk",
+    "cloud-tools",
+    "ai-assisted",
+    "spec-driven",
+    "property-based-testing"
+  ],
   "categories": [
     "Other"
   ],
+  "engines": {
+    "vscode": "^1.88.0"
+  },
   "activationEvents": [
-    "onView:sqsManagementQueues",
-    "onCommand:sqs-management-tool.selectAwsProfile"
+    "onView:sqsManagementQueues"
   ],
   "main": "./out/extension-standalone.js",
   "contributes": {
@@ -114,7 +151,8 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "pnpm run bundle",
+    "bundle": "esbuild ./src/extension-standalone.ts --bundle --outfile=out/extension-standalone.js --external:vscode --format=cjs --platform=node --sourcemap",
     "compile": "tsc -p ./",
     "compile:e2e": "tsc -p ./tsconfig.e2e.json",
     "watch": "tsc -watch -p ./",
@@ -128,7 +166,9 @@
     "test:e2e:ci": "CI=true pnpm run test:e2e",
     "test:e2e:coverage": "c8 --reporter=html --reporter=json --reporter=lcov pnpm run test:e2e:ci",
     "test:e2e:debug": "node --inspect-brk ./out/tests/e2e/runTests.js",
-    "verify": "bash scripts/verify-implementation.sh"
+    "verify": "bash scripts/verify-implementation.sh",
+    "package": "pnpm vsce package --no-dependencies",
+    "publish": "pnpm vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
@@ -143,6 +183,7 @@
     "@vscode/test-electron": "^2.5.2",
     "c8": "^11.0.0",
     "chai": "^6.2.2",
+    "esbuild": "^0.27.3",
     "eslint": "^8.57.0",
     "glob": "^13.0.6",
     "jest": "^30.2.0",

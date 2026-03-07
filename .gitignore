@@ -21,3 +21,9 @@ data/
 .docker/
 node_modules
 test-results/
+
+# VS Code extension build artifacts
+*.vsix
+
+# VS Code extension publishing credentials
+.vsce

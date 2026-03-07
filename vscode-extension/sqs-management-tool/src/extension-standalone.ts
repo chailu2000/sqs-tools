@@ -569,13 +569,11 @@ async function addQueueByUrl(treeProvider: QueueTreeDataProvider) {
 }
 
 function getWebviewContent(webview: vscode.Webview, queue: QueueConfig): string {
+    // Log for debugging
     const scriptUri = webview.asWebviewUri(
         vscode.Uri.joinPath(extensionContext.extensionUri, 'media', 'bundle.js')
     );
     const nonce = getNonce();
-
-    // Log for debugging
-    log(`Loading webview for queue: ${queue.name}, script: ${scriptUri.toString()}`);
 
     // Convert QueueConfig to the format expected by the webview
     const webviewQueue = {
@@ -620,10 +618,6 @@ function getWebviewContent(webview: vscode.Webview, queue: QueueConfig): string 
         // Acquire VS Code API before loading bundle
         const vscode = acquireVsCodeApi();
         window.vscode = vscode;
-        
-        // Debug: Log when script loads
-        console.log('[Webview] Initializing with queue:', window.initialQueue);
-        console.log('[Webview] VS Code API available:', !!window.vscode);
     </script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
@@ -631,11 +625,6 @@ function getWebviewContent(webview: vscode.Webview, queue: QueueConfig): string 
 }
 
 async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, queue: QueueConfig) {
-    log('=== WEBVIEW MESSAGE RECEIVED ===');
-    log('Command:', message.command);
-    log('Full message:', JSON.stringify(message, null, 2));
-    log('================================');
-
     const client = clientFactory.getClient(queue.region);
     const sqsService = new SQSService(client);
 
@@ -749,24 +738,15 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
 
         case 'redriveSelectedMessages':
             try {
-                log('Redrive request received:', message);
-
                 if (!queue.dlqUrl) {
-                    const error = 'No DLQ configured for this queue';
-                    log('Redrive error:', error);
-                    throw new Error(error);
+                    throw new Error('No DLQ configured for this queue');
                 }
-
-                log(`Starting redrive from DLQ ${queue.dlqUrl} to main queue ${queue.url}`);
-                log(`Messages to redrive:`, message.messages);
 
                 const result = await sqsService.redriveSelectedMessages(
                     queue.dlqUrl,
                     queue.url,
                     message.messages
                 );
-
-                log('Redrive completed:', result);
 
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'redriveResult',
@@ -783,7 +763,6 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
                     );
                 }
             } catch (error: any) {
-                log('Redrive error caught:', error);
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'redriveResult',
                     error: error.message

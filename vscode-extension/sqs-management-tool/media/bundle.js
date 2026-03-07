@@ -5237,39 +5237,25 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   }
   delegate(["click"]);
   function init() {
-    console.log("Extension entry: Initializing...");
-    console.log("window.initialQueue:", window.initialQueue);
-    console.log("window.vscode:", window.vscode);
     if (window.initialQueue) {
-      console.log("Setting queue in store:", window.initialQueue.queueName);
       store.selectQueue(window.initialQueue);
-    } else {
-      console.warn("No initialQueue found on window");
     }
     const appElement = document.getElementById("app");
-    console.log("App element:", appElement);
     if (!appElement) {
-      console.error("Could not find #app element");
       document.body.innerHTML = '<h1 style="color: red;">ERROR: Could not find #app element</h1>';
       return;
     }
     try {
-      console.log("About to mount AppExtension...");
-      const app = mount(AppExtension, {
+      mount(AppExtension, {
         target: appElement
       });
-      console.log("App mounted successfully:", app);
     } catch (error) {
-      console.error("Error mounting app:", error);
       appElement.innerHTML = `<h1 style="color: red;">ERROR: ${error}</h1><pre>${error instanceof Error ? error.stack : ""}</pre>`;
     }
   }
-  console.log("Extension entry loaded, readyState:", document.readyState);
   if (document.readyState === "loading") {
-    console.log("Waiting for DOMContentLoaded...");
     document.addEventListener("DOMContentLoaded", init);
   } else {
-    console.log("DOM already ready, initializing now...");
     init();
   }
 })();
