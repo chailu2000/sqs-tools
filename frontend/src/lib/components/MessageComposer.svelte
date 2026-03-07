@@ -5,13 +5,13 @@
     let messageBody = $state("");
     let validateJson = $state(false);
     let delaySeconds = $state(0);
-    let attributes = $state<Array<{ key: string; value: string }>>([]);
+    let attributes = $state<Array<{ key: string; value: string; dataType: string }>>([]);
     let sending = $state(false);
     let error = $state<string | null>(null);
     let success = $state<string | null>(null);
 
     function addAttribute() {
-        attributes = [...attributes, { key: "", value: "" }];
+        attributes = [...attributes, { key: "", value: "", dataType: "String" }];
     }
 
     function removeAttribute(index: number) {
@@ -56,7 +56,7 @@
                 .filter((attr) => attr.key.trim() && attr.value.trim())
                 .forEach((attr) => {
                     messageAttributes[attr.key] = {
-                        dataType: "String",
+                        dataType: attr.dataType || "String",
                         stringValue: attr.value,
                     };
                 });
@@ -130,14 +130,29 @@
                         <input
                             type="text"
                             bind:value={attr.key}
-                            placeholder="Key"
-                            class="input-attr"
+                            placeholder="Key (e.g., type)"
+                            class="input-attr-key"
+                            title="Attribute name"
                         />
+                        <select
+                            bind:value={attr.dataType}
+                            class="input-attr-type"
+                            title="Data type"
+                        >
+                            <option value="String">String</option>
+                            <option value="Number">Number</option>
+                            <option value="Binary">Binary</option>
+                            <option value="String.json">String.json</option>
+                            <option value="String.xml">String.xml</option>
+                            <option value="Number.int">Number.int</option>
+                            <option value="Number.float">Number.float</option>
+                        </select>
                         <input
                             type="text"
                             bind:value={attr.value}
-                            placeholder="Value"
-                            class="input-attr"
+                            placeholder={attr.dataType === 'Number' || attr.dataType === 'Number.int' || attr.dataType === 'Number.float' ? 'Value (number)' : attr.dataType === 'Binary' ? 'Value (base64)' : 'Value'}
+                            class="input-attr-value"
+                            title="Attribute value"
                         />
                         <button
                             onclick={() => removeAttribute(index)}
@@ -272,8 +287,25 @@
         align-items: center;
     }
 
-    .input-attr {
+    .input-attr-key {
         flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .input-attr-type {
+        flex: 0 0 140px;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .input-attr-value {
+        flex: 2;
         padding: 0.5rem;
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -352,7 +384,9 @@
 
         .textarea,
         .input-small,
-        .input-attr {
+        .input-attr-key,
+        .input-attr-type,
+        .input-attr-value {
             background: #333;
             color: #fff;
             border-color: #555;
