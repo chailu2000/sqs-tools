@@ -19,3 +19,5 @@ data/
 
 # Docker build artefacts
 .docker/
+node_modules
+test-results/

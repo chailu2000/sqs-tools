@@ -1,0 +1,147 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    name: E2E Tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+          cache-dependency-path: 'vscode-extension/sqs-management-tool/pnpm-lock.yaml'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      
+      - name: Cache VS Code binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.vscode-test
+            vscode-extension/sqs-management-tool/.vscode-test
+          key: vscode-test-${{ runner.os }}-${{ hashFiles('vscode-extension/sqs-management-tool/package.json') }}
+          restore-keys: |
+            vscode-test-${{ runner.os }}-
+      
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: vscode-extension/sqs-management-tool/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('vscode-extension/sqs-management-tool/pnpm-lock.yaml') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+      
+      - name: Install dependencies
+        working-directory: vscode-extension/sqs-management-tool
+        run: pnpm install --frozen-lockfile
+      
+      - name: Start LocalStack
+        working-directory: vscode-extension/sqs-management-tool
+        run: docker compose -f tests/e2e/config/docker-compose.localstack.yml up -d
+      
+      - name: Wait for LocalStack health check
+        working-directory: vscode-extension/sqs-management-tool
+        run: |
+          echo "Waiting for LocalStack to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:4566/_localstack/health | grep -q '"sqs": "available"'; then
+              echo "LocalStack is ready!"
+              exit 0
+            fi
+            echo "Attempt $i: LocalStack not ready yet, waiting..."
+            sleep 2
+          done
+          echo "LocalStack failed to start"
+          exit 1
+      
+      - name: Set environment variables
+        run: |
+          echo "AWS_ENDPOINT_URL=http://localhost:4566" >> $GITHUB_ENV
+          echo "AWS_ACCESS_KEY_ID=test" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=test" >> $GITHUB_ENV
+          echo "AWS_REGION=us-east-1" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+      
+      - name: Run E2E tests
+        working-directory: vscode-extension/sqs-management-tool
+        run: pnpm run test:e2e:ci
+        timeout-minutes: 20
+      
+      - name: Generate coverage report
+        if: always()
+        working-directory: vscode-extension/sqs-management-tool
+        run: pnpm run test:e2e:coverage
+        continue-on-error: true
+      
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: vscode-extension/sqs-management-tool/coverage/e2e/lcov.info
+          flags: e2e-${{ matrix.os }}
+          name: e2e-coverage-${{ matrix.os }}
+          fail_ci_if_error: false
+      
+      - name: Check coverage thresholds
+        if: always()
+        working-directory: vscode-extension/sqs-management-tool
+        run: |
+          if [ -f coverage/e2e/coverage-summary.json ]; then
+            echo "Coverage report generated successfully"
+            cat coverage/e2e/coverage-summary.json
+          else
+            echo "No coverage report found"
+          fi
+        shell: bash
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            vscode-extension/sqs-management-tool/test-results/
+            vscode-extension/sqs-management-tool/.vscode-test/
+          retention-days: 7
+      
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.os }}
+          path: vscode-extension/sqs-management-tool/test-results/screenshots/
+          retention-days: 7
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.os }}
+          path: vscode-extension/sqs-management-tool/test-results/logs/
+          retention-days: 7
+      
+      - name: Stop LocalStack
+        if: always()
+        working-directory: vscode-extension/sqs-management-tool
+        run: docker compose -f tests/e2e/config/docker-compose.localstack.yml down
