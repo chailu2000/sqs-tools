@@ -2,6 +2,12 @@
 
 All notable changes to the "AWS SQS Management Tool" extension will be documented in this file.
 
+## [1.0.2] - 2024-03-07
+
+### Fixed
+- Updated README with correct GitHub repository URL
+- Updated license information in README
+
 ## [1.0.1] - 2024-03-07
 
 ### Fixed
