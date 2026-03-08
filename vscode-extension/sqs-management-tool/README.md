@@ -261,11 +261,11 @@ This approach enabled rapid development of a production-ready extension with ext
 
 ## Support
 
-For issues, feature requests, or contributions, please visit our [GitHub repository](https://github.com/your-org/sqs-management-tool).
+For issues, feature requests, or contributions, please visit our [GitHub repository](https://github.com/chailu2000/sqs-tools).
 
 ## License
 
-[Your License Here]
+MIT License - See [LICENSE](LICENSE) for details.
 
 ## Changelog
 
