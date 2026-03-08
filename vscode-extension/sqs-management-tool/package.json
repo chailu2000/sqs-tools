@@ -2,7 +2,7 @@
   "name": "sqs-management-tool",
   "displayName": "AWS SQS Management Tool",
   "description": "Manage AWS SQS queues directly from VS Code. Send, receive, and monitor messages without leaving your IDE.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "chailu2000",
   "author": {
     "name": "Lu Chai",

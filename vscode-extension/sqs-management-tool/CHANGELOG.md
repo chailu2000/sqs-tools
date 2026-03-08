@@ -2,6 +2,11 @@
 
 All notable changes to the "AWS SQS Management Tool" extension will be documented in this file.
 
+## [1.0.1] - 2024-03-07
+
+### Fixed
+- Fixed broken screenshots in VS Code Marketplace by using absolute GitHub URLs instead of relative paths
+
 ## [1.0.0] - 2024-03-07
 
 ### Added
