@@ -107,6 +107,12 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "sqsManagementQueues",
+        "contents": "No SQS queues configured.\n[Configure AWS Credentials](command:sqs-management-tool.selectAwsProfile)\n[Add Queue](command:sqs-management-tool.addQueue)\nTo get started, configure your AWS credentials and add a queue by name or URL."
+      }
+    ],
     "menus": {
       "view/title": [
         {

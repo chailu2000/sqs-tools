@@ -55,7 +55,7 @@ class QueueTreeDataProvider implements vscode.TreeDataProvider<QueueItem> {
             try {
                 const queues = await queueStorage.getQueues();
                 if (queues.length === 0) {
-                    vscode.window.showInformationMessage('No SQS queues configured. Add one using the + button.');
+                    // Don't show popup - viewsWelcome will handle empty state
                 }
                 return queues.map(queue => new QueueItem(queue, vscode.TreeItemCollapsibleState.None));
             } catch (error: any) {
