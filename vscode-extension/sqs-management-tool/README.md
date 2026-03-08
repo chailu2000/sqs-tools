@@ -11,22 +11,22 @@ A standalone VS Code extension for managing AWS SQS queues directly from your ID
 ### Queue Management
 View queue details including message counts, DLQ configuration, and queue attributes.
 
-![Queue Information](images/queue-info.png)
+![Queue Information](https://raw.githubusercontent.com/chailu2000/sqs-tools/main/vscode-extension/sqs-management-tool/images/queue-info.png)
 
 ### Message Composer
 Send messages with custom attributes supporting all AWS SQS data types.
 
-![Message Composer](images/message-composer.png)
+![Message Composer](https://raw.githubusercontent.com/chailu2000/sqs-tools/main/vscode-extension/sqs-management-tool/images/message-composer.png)
 
 ### Message Details
 View complete message details including body, attributes, and metadata.
 
-![Message Details](images/message-details.png)
+![Message Details](https://raw.githubusercontent.com/chailu2000/sqs-tools/main/vscode-extension/sqs-management-tool/images/message-details.png)
 
 ### DLQ Redrive
 Move messages from Dead Letter Queues back to source queues with progress tracking.
 
-![DLQ Redrive](images/dlq-redrive.png)
+![DLQ Redrive](https://raw.githubusercontent.com/chailu2000/sqs-tools/main/vscode-extension/sqs-management-tool/images/dlq-redrive.png)
 
 
 ## Features
