@@ -2,6 +2,13 @@
 
 All notable changes to the "AWS SQS Management Tool" extension will be documented in this file.
 
+## [1.0.3] - 2024-03-07
+
+### Fixed
+- Improved empty queue list UX with inline welcome message
+- Added "Configure AWS Credentials" and "Add Queue" buttons in empty state
+- Removed outdated popup message about "+" button
+
 ## [1.0.2] - 2024-03-07
 
 ### Fixed
