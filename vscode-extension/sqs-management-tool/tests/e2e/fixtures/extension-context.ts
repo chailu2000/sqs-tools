@@ -5,6 +5,7 @@
  */
 
 import * as vscode from 'vscode';
+import { getActivatedExtension } from './extension-finder';
 
 export interface WebviewHandle {
     panel: vscode.WebviewPanel;
@@ -21,33 +22,7 @@ export class ExtensionTestContext {
      * Activate the extension
      */
     async activateExtension(): Promise<void> {
-        // Try different extension ID formats
-        const possibleIds = [
-            'undefined_publisher.sqs-management-tool',
-            'sqs-management-tool',
-            'publisher.sqs-management-tool'
-        ];
-
-        let foundExtension: vscode.Extension<any> | undefined;
-
-        for (const id of possibleIds) {
-            foundExtension = vscode.extensions.getExtension(id);
-            if (foundExtension) {
-                this.extension = foundExtension;
-                break;
-            }
-        }
-
-        if (!this.extension) {
-            // List all extensions to help debug
-            const allExtensions = vscode.extensions.all.map(ext => ext.id);
-            console.log('Available extensions:', allExtensions);
-            throw new Error(`Extension not found. Tried: ${possibleIds.join(', ')}`);
-        }
-
-        if (!this.extension.isActive) {
-            await this.extension.activate();
-        }
+        this.extension = await getActivatedExtension();
 
         // Wait a bit for extension to fully initialize
         await this.sleep(1000);

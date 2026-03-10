@@ -227,7 +227,9 @@ export class SQSService implements ISQSService {
             QueueUrl: queueUrl,
             MessageBody: body,
             DelaySeconds: options.delaySeconds,
-            MessageAttributes: options.messageAttributes
+            MessageAttributes: options.messageAttributes,
+            MessageGroupId: options.messageGroupId,
+            MessageDeduplicationId: options.messageDeduplicationId
         });
 
         const response = await this.client.send(command);

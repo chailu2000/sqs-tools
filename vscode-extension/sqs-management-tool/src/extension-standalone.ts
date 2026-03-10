@@ -703,7 +703,9 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
 
                 await sqsService.sendMessage(queue.url, message.body, {
                     delaySeconds: message.delaySeconds || 0,
-                    messageAttributes
+                    messageAttributes,
+                    messageGroupId: message.messageGroupId,
+                    messageDeduplicationId: message.messageDeduplicationId
                 });
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'messageSent',

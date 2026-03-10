@@ -5,11 +5,23 @@
     let messageBody = $state("");
     let validateJson = $state(false);
     let delaySeconds = $state(0);
+    let messageGroupId = $state("");
+    let messageDeduplicationId = $state("");
     let attributes = $state<Array<{ id: number; key: string; value: string; dataType: string }>>([]);
     let nextAttributeId = $state(0);
     let sending = $state(false);
     let error = $state<string | null>(null);
     let success = $state<string | null>(null);
+
+    // Detect if current queue is FIFO
+    const isFifoQueue = $derived.by(() => {
+        return store.selectedQueue?.queueName?.endsWith('.fifo') ?? false;
+    });
+
+    // Check if ContentBasedDeduplication is enabled
+    const hasContentBasedDeduplication = $derived.by(() => {
+        return store.selectedQueue?.attributes?.ContentBasedDeduplication === 'true';
+    });
 
     function addAttribute() {
         attributes = [...attributes, { id: nextAttributeId++, key: "", value: "", dataType: "String" }];
@@ -35,6 +47,12 @@
 
         if (!messageBody.trim()) {
             error = "Message body is required";
+            return;
+        }
+
+        // FIFO queue validation
+        if (isFifoQueue && !messageGroupId.trim()) {
+            error = "Message Group ID is required for FIFO queues";
             return;
         }
 
@@ -67,6 +85,8 @@
                 messageBody,
                 messageAttributes,
                 delaySeconds,
+                isFifoQueue ? messageGroupId : undefined,
+                isFifoQueue && messageDeduplicationId ? messageDeduplicationId : undefined,
             );
 
             success = `Message sent successfully!`;
@@ -76,6 +96,10 @@
             messageBody = "";
             attributes = [];
             delaySeconds = 0;
+            if (isFifoQueue) {
+                // Keep messageGroupId for convenience, clear deduplication ID
+                messageDeduplicationId = "";
+            }
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Failed to send message";
@@ -116,6 +140,56 @@
             />
         </label>
     </div>
+
+    {#if isFifoQueue}
+        <div class="fifo-section">
+            <div class="fifo-header">
+                <strong>FIFO Queue Parameters</strong>
+                <span class="fifo-badge">FIFO</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="message-group-id">
+                    Message Group ID: <span class="required">*</span>
+                </label>
+                <input
+                    id="message-group-id"
+                    type="text"
+                    bind:value={messageGroupId}
+                    placeholder="e.g., order-processing-group"
+                    class="input-text"
+                    title="Messages with the same Message Group ID are processed in order"
+                />
+                <small class="help-text">
+                    Messages with the same group ID are processed in FIFO order
+                </small>
+            </div>
+
+            {#if !hasContentBasedDeduplication}
+                <div class="form-group">
+                    <label for="message-dedup-id">
+                        Message Deduplication ID: <span class="optional">(optional)</span>
+                    </label>
+                    <input
+                        id="message-dedup-id"
+                        type="text"
+                        bind:value={messageDeduplicationId}
+                        placeholder="e.g., unique-message-id-123"
+                        class="input-text"
+                        title="Token for deduplication of sent messages"
+                    />
+                    <small class="help-text">
+                        Leave empty to use content-based deduplication
+                    </small>
+                </div>
+            {:else}
+                <div class="info-message">
+                    <strong>ℹ️ Content-Based Deduplication Enabled</strong>
+                    <p>This queue uses content-based deduplication. Message Deduplication ID is not required.</p>
+                </div>
+            {/if}
+        </div>
+    {/if}
 
     <div class="attributes-section">
         <div class="attributes-header">
@@ -379,5 +453,77 @@
     .btn-primary:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .fifo-section {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--vscode-editorGroupHeader-tabsBackground);
+        border-radius: 4px;
+        border-left: 3px solid var(--vscode-textLink-foreground);
+    }
+
+    .fifo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .fifo-badge {
+        background: var(--vscode-textLink-foreground);
+        color: var(--vscode-editor-background);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .input-text {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--vscode-input-border);
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .help-text {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.8rem;
+        color: var(--vscode-descriptionForeground);
+        font-style: italic;
+    }
+
+    .info-message {
+        padding: 0.75rem;
+        background: var(--vscode-textBlockQuote-background);
+        border-radius: 4px;
+        border-left: 3px solid var(--vscode-textLink-foreground);
+    }
+
+    .info-message strong {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--vscode-textLink-foreground);
+    }
+
+    .info-message p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--vscode-descriptionForeground);
+    }
+
+    .required {
+        color: var(--vscode-errorForeground);
+        font-weight: bold;
+    }
+
+    .optional {
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.85rem;
+        font-weight: normal;
     }
 </style>

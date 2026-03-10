@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { LocalStackFixture } from './localstack';
 import { QueueFixture, QueueConfig } from './test-data';
 import { ExtensionTestContext, createExtensionContext } from './extension-context';
+import { getExtensionContext as getExtensionContextUtil, findExtension } from './extension-finder';
 
 export interface TestSetup {
     localstack: LocalStackFixture;
@@ -26,8 +27,13 @@ let globalSetupInstance: TestSetup | null = null;
  * Get the extension context from the activated extension
  */
 function getExtensionContext(): vscode.ExtensionContext {
-    const extension = vscode.extensions.getExtension('undefined_publisher.sqs-management-tool');
+    const extension = findExtension();
+
     if (!extension || !extension.isActive) {
+        const allExtensionIds = vscode.extensions.all
+            .filter(ext => ext.id.includes('sqs'))
+            .map(ext => ext.id);
+        console.log('Available SQS extensions:', allExtensionIds);
         throw new Error('Extension not activated');
     }
 
@@ -108,7 +114,7 @@ export async function globalSetup(): Promise<TestSetup> {
         await configureAwsCredentials();
 
         // Get extension API
-        const extension = vscode.extensions.getExtension('undefined_publisher.sqs-management-tool');
+        const extension = findExtension();
         const extensionApi = extension?.exports || null;
 
         const setup: TestSetup = {

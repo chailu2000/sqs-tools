@@ -182,7 +182,9 @@ export const api = {
         queueId: string,
         body: string,
         attributes?: { [key: string]: string },
-        delaySeconds?: number
+        delaySeconds?: number,
+        messageGroupId?: string,
+        messageDeduplicationId?: string
     ): Promise<void> {
         const promise = waitForMessage<{ success: boolean }>('messageSent');
 
@@ -191,7 +193,9 @@ export const api = {
             queueId,
             body,
             attributes,
-            delaySeconds
+            delaySeconds,
+            messageGroupId,
+            messageDeduplicationId
         });
 
         await promise;

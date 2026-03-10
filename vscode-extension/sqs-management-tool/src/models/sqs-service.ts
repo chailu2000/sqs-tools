@@ -55,6 +55,8 @@ export interface ReceiveOptions {
 export interface SendOptions {
     delaySeconds?: number;
     messageAttributes?: Record<string, MessageAttributeValue>;
+    messageGroupId?: string;
+    messageDeduplicationId?: string;
 }
 
 /**

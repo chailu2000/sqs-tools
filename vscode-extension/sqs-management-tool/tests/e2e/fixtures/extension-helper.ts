@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import { QueueConfig } from '../../../src/models/queue-storage';
+import { getActivatedExtension } from './extension-finder';
 
 /**
  * Helper to interact with extension internals during tests
@@ -75,30 +76,10 @@ export class ExtensionHelper {
  * Get extension helper for the active extension
  */
 export async function getExtensionHelper(): Promise<ExtensionHelper> {
-    // Find the extension
-    const possibleIds = [
-        'undefined_publisher.sqs-management-tool',
-        'sqs-management-tool',
-        'publisher.sqs-management-tool'
-    ];
-
-    let extension: vscode.Extension<any> | undefined;
-
-    for (const id of possibleIds) {
-        extension = vscode.extensions.getExtension(id);
-        if (extension) {
-            break;
-        }
-    }
-
-    if (!extension) {
-        throw new Error('Extension not found');
-    }
-
-    // Activate extension and get test API
-    const testApi = extension.isActive ? extension.exports : await extension.activate();
+    const extension = await getActivatedExtension();
 
     // Use the actual extension context from the test API
+    const testApi = extension.exports;
     if (!testApi || !testApi.context) {
         throw new Error('Extension context not available in test API');
     }

@@ -784,6 +784,18 @@
                             >{selectedMessage.receiptHandle}</span
                         >
                     </div>
+                    {#if selectedMessage.attributes?.MessageGroupId}
+                        <div class="detail-row">
+                            <strong>Message Group ID:</strong>
+                            <span class="fifo-value">{selectedMessage.attributes.MessageGroupId}</span>
+                        </div>
+                    {/if}
+                    {#if selectedMessage.attributes?.MessageDeduplicationId}
+                        <div class="detail-row">
+                            <strong>Message Deduplication ID:</strong>
+                            <span class="fifo-value">{selectedMessage.attributes.MessageDeduplicationId}</span>
+                        </div>
+                    {/if}
                     {#if selectedMessage.messageAttributes && Object.keys(selectedMessage.messageAttributes).length > 0}
                         <div class="detail-row">
                             <strong>Message Attributes:</strong>
@@ -1265,6 +1277,16 @@
     .attr-value {
         color: var(--vscode-editor-foreground);
         margin-left: 0.25rem;
+    }
+
+    .fifo-value {
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: var(--vscode-textLink-foreground);
+        background: var(--vscode-editorGroupHeader-tabsBackground);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
     }
 
     .body-content {

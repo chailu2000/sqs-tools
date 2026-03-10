@@ -2,6 +2,21 @@
 
 All notable changes to the "AWS SQS Management Tool" extension will be documented in this file.
 
+## [1.0.4] - 2024-03-07
+
+### Added
+- FIFO queue support for sending messages
+- Auto-detection of FIFO queues (queues ending with `.fifo`)
+- MessageGroupId field (required for FIFO queues)
+- MessageDeduplicationId field (optional, shown only when ContentBasedDeduplication is disabled)
+- Visual FIFO badge and section in message composer
+- Helpful tooltips and validation for FIFO parameters
+
+### Changed
+- Message composer now adapts UI based on queue type (Standard vs FIFO)
+- MessageGroupId is preserved after sending for convenience
+- MessageDeduplicationId is cleared after sending
+
 ## [1.0.3] - 2024-03-07
 
 ### Fixed
