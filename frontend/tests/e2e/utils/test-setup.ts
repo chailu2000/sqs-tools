@@ -30,3 +30,21 @@ export async function addTestQueue(queuePage: QueuePage, queueName: string, regi
     }
     await queuePage.selectQueue(queueName);
 }
+
+export async function clearAllQueues(page: Page) {
+    await page.goto('/');
+    // We use the internal API via page.evaluate for speed and robustness
+    await page.evaluate(async () => {
+        try {
+            const resp = await fetch('/api/queues');
+            if (!resp.ok) return;
+            const queues = await resp.json();
+            for (const q of queues) {
+                await fetch(`/api/queues/${q.id}`, { method: 'DELETE' });
+            }
+        } catch (e) {
+            console.error('Failed to clear queues:', e);
+        }
+    });
+    await page.reload();
+}

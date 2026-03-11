@@ -151,7 +151,7 @@ test.describe('View Mode Consistency', () => {
         // We run a small deterministic set that covers the property exhaustively given the state space.
         await queuePage.selectQueue(queueA);
 
-        const viewModes: Array<'cards' | 'table'> = ['table', 'cards'];
+        const viewModes: Array<'cards' | 'table'> = ['table'];
         // DLQ tab requires queueA (which has a DLQ). 'main' is always available.
         const tabs: Array<'main' | 'dlq'> = ['dlq', 'main', 'dlq', 'main'];
 

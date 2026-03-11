@@ -8,22 +8,22 @@
 
  :: Spring Boot ::                (v4.0.0)
 
-2026-03-11T18:58:57.560-04:00  INFO 9533 --- [           main] c.sqstools.SqsManagementToolApplication  : Starting SqsManagementToolApplication v0.0.1-SNAPSHOT using Java 21.0.2 with PID 9533 (/Users/luindc22203/workspace/sqs-tools/backend/build/libs/sqs-tools-backend-0.0.1-SNAPSHOT.jar started by luindc22203 in /Users/luindc22203/workspace/sqs-tools/backend)
-2026-03-11T18:58:57.562-04:00 DEBUG 9533 --- [           main] c.sqstools.SqsManagementToolApplication  : Running with Spring Boot v4.0.0, Spring v7.0.1
-2026-03-11T18:58:57.562-04:00  INFO 9533 --- [           main] c.sqstools.SqsManagementToolApplication  : The following 1 profile is active: "test"
-2026-03-11T18:58:57.837-04:00  INFO 9533 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-03-11T18:58:57.860-04:00  INFO 9533 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 19 ms. Found 2 JPA repository interfaces.
-2026-03-11T18:58:58.070-04:00  INFO 9533 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
-2026-03-11T18:58:58.076-04:00  INFO 9533 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-03-11T18:58:58.076-04:00  INFO 9533 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.14]
-2026-03-11T18:58:58.087-04:00  INFO 9533 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 498 ms
-2026-03-11T18:58:58.152-04:00  INFO 9533 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-03-11T18:58:58.175-04:00  INFO 9533 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 7.1.8.Final
-2026-03-11T18:58:58.350-04:00  INFO 9533 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-03-11T18:58:58.363-04:00  INFO 9533 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-03-11T18:58:58.526-04:00  INFO 9533 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.sqlite.jdbc4.JDBC4Connection@73b0ed03
-2026-03-11T18:58:58.527-04:00  INFO 9533 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-03-11T18:58:58.545-04:00  INFO 9533 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+2026-03-11T19:27:05.647-04:00  INFO 11711 --- [           main] c.sqstools.SqsManagementToolApplication  : Starting SqsManagementToolApplication v0.0.1-SNAPSHOT using Java 21.0.2 with PID 11711 (/Users/luindc22203/workspace/sqs-tools/backend/build/libs/sqs-tools-backend-0.0.1-SNAPSHOT.jar started by luindc22203 in /Users/luindc22203/workspace/sqs-tools/backend)
+2026-03-11T19:27:05.652-04:00 DEBUG 11711 --- [           main] c.sqstools.SqsManagementToolApplication  : Running with Spring Boot v4.0.0, Spring v7.0.1
+2026-03-11T19:27:05.652-04:00  INFO 11711 --- [           main] c.sqstools.SqsManagementToolApplication  : The following 1 profile is active: "test"
+2026-03-11T19:27:05.980-04:00  INFO 11711 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-11T19:27:06.006-04:00  INFO 11711 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 21 ms. Found 2 JPA repository interfaces.
+2026-03-11T19:27:06.254-04:00  INFO 11711 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-03-11T19:27:06.260-04:00  INFO 11711 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-11T19:27:06.261-04:00  INFO 11711 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.14]
+2026-03-11T19:27:06.273-04:00  INFO 11711 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 576 ms
+2026-03-11T19:27:06.362-04:00  INFO 11711 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-11T19:27:06.389-04:00  INFO 11711 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 7.1.8.Final
+2026-03-11T19:27:06.607-04:00  INFO 11711 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-11T19:27:06.621-04:00  INFO 11711 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-11T19:27:06.793-04:00  INFO 11711 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.sqlite.jdbc4.JDBC4Connection@73b0ed03
+2026-03-11T19:27:06.794-04:00  INFO 11711 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-11T19:27:06.812-04:00  INFO 11711 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
 	Database JDBC URL [jdbc:sqlite:./data/sqs-management.db]
 	Database driver: SQLite JDBC
 	Database dialect: SQLiteDialect
@@ -35,120 +35,28 @@
 	Pool: DatasourceConnectionProviderImpl
 	Minimum pool size: undefined/unknown
 	Maximum pool size: undefined/unknown
-2026-03-11T18:58:58.860-04:00  INFO 9533 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-03-11T18:58:58.873-04:00  INFO 9533 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-03-11T18:58:58.929-04:00  INFO 9533 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-03-11T18:58:59.016-04:00  WARN 9533 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-03-11T18:58:59.144-04:00  INFO 9533 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
-2026-03-11T18:58:59.149-04:00  INFO 9533 --- [           main] c.sqstools.SqsManagementToolApplication  : Started SqsManagementToolApplication in 1.766 seconds (process running for 2.007)
+2026-03-11T19:27:07.100-04:00  INFO 11711 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-11T19:27:07.118-04:00  INFO 11711 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-11T19:27:07.204-04:00  INFO 11711 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-11T19:27:07.328-04:00  WARN 11711 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-11T19:27:07.493-04:00  WARN 11711 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-03-11T19:27:07.493-04:00  INFO 11711 --- [           main] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-03-11T19:27:07.494-04:00  INFO 11711 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-03-11T19:27:07.495-04:00  INFO 11711 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-03-11T19:27:07.501-04:00  INFO 11711 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
 
-===========================================
-SQS Management Tool is running!
-Access URL: http://localhost:8080
-===========================================
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-03-11T19:27:07.508-04:00 ERROR 11711 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
 
-2026-03-11T18:58:59.184-04:00  INFO 9533 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-03-11T18:58:59.185-04:00  INFO 9533 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-03-11T18:58:59.185-04:00  INFO 9533 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
-Discovered AWS Profiles: [default, sqs-tool]
-Received add queue request for identifier: test-queue-1, region: us-east-1
-Saved queue configuration: test-queue-1 (ID: c49c1b49-f29e-4239-9270-0a49dea74668)
-Discovered AWS Profiles: [default, sqs-tool]
-2026-03-11T18:59:05.186-04:00 ERROR 9533 --- [nio-8080-exec-7] c.s.exception.GlobalExceptionHandler     : Runtime error
+***************************
+APPLICATION FAILED TO START
+***************************
 
-java.lang.RuntimeException: Failed to add queue: Queue not found: non-existent-queue-4dhtqzh
-	at com.sqstools.controller.QueueController.addQueue(QueueController.java:61) ~[!/:0.0.1-SNAPSHOT]
-	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
-	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:190) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1003) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.1.jar!/:7.0.1]
-	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.14.jar!/:na]
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.1.jar!/:7.0.1]
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-embed-core-11.0.14.jar!/:na]
-	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
-Caused by: java.lang.RuntimeException: Queue not found: non-existent-queue-4dhtqzh
-	at com.sqstools.service.QueueService.resolveQueueUrl(QueueService.java:40) ~[!/:0.0.1-SNAPSHOT]
-	at com.sqstools.controller.QueueController.addQueue(QueueController.java:34) ~[!/:0.0.1-SNAPSHOT]
-	... 43 common frames omitted
-Caused by: software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException: The specified queue does not exist. (Service: Sqs, Status Code: 400, Request ID: 5600e9fc-834f-5f6a-929b-8bd776b6eac9)
-	at software.amazon.awssdk.core.internal.http.CombinedResponseHandler.handleErrorResponse(CombinedResponseHandler.java:124) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.CombinedResponseHandler.handleResponse(CombinedResponseHandler.java:81) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.CombinedResponseHandler.handle(CombinedResponseHandler.java:59) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.CombinedResponseHandler.handle(CombinedResponseHandler.java:40) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.HandleResponseStage.execute(HandleResponseStage.java:50) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.HandleResponseStage.execute(HandleResponseStage.java:38) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.RequestPipelineBuilder$ComposingRequestPipelineStage.execute(RequestPipelineBuilder.java:206) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallAttemptTimeoutTrackingStage.execute(ApiCallAttemptTimeoutTrackingStage.java:74) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallAttemptTimeoutTrackingStage.execute(ApiCallAttemptTimeoutTrackingStage.java:43) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.TimeoutExceptionHandlingStage.execute(TimeoutExceptionHandlingStage.java:79) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.TimeoutExceptionHandlingStage.execute(TimeoutExceptionHandlingStage.java:41) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallAttemptMetricCollectionStage.execute(ApiCallAttemptMetricCollectionStage.java:55) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallAttemptMetricCollectionStage.execute(ApiCallAttemptMetricCollectionStage.java:39) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.RetryableStage2.executeRequest(RetryableStage2.java:93) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.RetryableStage2.execute(RetryableStage2.java:56) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.RetryableStage2.execute(RetryableStage2.java:36) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.RequestPipelineBuilder$ComposingRequestPipelineStage.execute(RequestPipelineBuilder.java:206) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.StreamManagingStage.execute(StreamManagingStage.java:53) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.StreamManagingStage.execute(StreamManagingStage.java:35) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallTimeoutTrackingStage.executeWithTimer(ApiCallTimeoutTrackingStage.java:82) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallTimeoutTrackingStage.execute(ApiCallTimeoutTrackingStage.java:62) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallTimeoutTrackingStage.execute(ApiCallTimeoutTrackingStage.java:43) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallMetricCollectionStage.execute(ApiCallMetricCollectionStage.java:50) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ApiCallMetricCollectionStage.execute(ApiCallMetricCollectionStage.java:32) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.RequestPipelineBuilder$ComposingRequestPipelineStage.execute(RequestPipelineBuilder.java:206) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.RequestPipelineBuilder$ComposingRequestPipelineStage.execute(RequestPipelineBuilder.java:206) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ExecutionFailureExceptionReportingStage.execute(ExecutionFailureExceptionReportingStage.java:37) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.pipeline.stages.ExecutionFailureExceptionReportingStage.execute(ExecutionFailureExceptionReportingStage.java:26) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.http.AmazonSyncHttpClient$RequestExecutionBuilderImpl.execute(AmazonSyncHttpClient.java:210) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.handler.BaseSyncClientHandler.invoke(BaseSyncClientHandler.java:103) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.handler.BaseSyncClientHandler.doExecute(BaseSyncClientHandler.java:173) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.handler.BaseSyncClientHandler.lambda$execute$1(BaseSyncClientHandler.java:80) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.handler.BaseSyncClientHandler.measureApiCallSuccess(BaseSyncClientHandler.java:182) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.internal.handler.BaseSyncClientHandler.execute(BaseSyncClientHandler.java:74) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.core.client.handler.SdkSyncClientHandler.execute(SdkSyncClientHandler.java:45) ~[sdk-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.awscore.client.handler.AwsSyncClientHandler.execute(AwsSyncClientHandler.java:53) ~[aws-core-2.29.39.jar!/:na]
-	at software.amazon.awssdk.services.sqs.DefaultSqsClient.getQueueUrl(DefaultSqsClient.java:1289) ~[sqs-2.29.39.jar!/:na]
-	at com.sqstools.service.QueueService.resolveQueueUrl(QueueService.java:33) ~[!/:0.0.1-SNAPSHOT]
-	... 44 common frames omitted
+Description:
 
-Discovered AWS Profiles: [default, sqs-tool]
-2026-03-11T18:59:22.835-04:00  INFO 9533 --- [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
-2026-03-11T18:59:22.838-04:00  INFO 9533 --- [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
-2026-03-11T18:59:22.839-04:00  INFO 9533 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-03-11T18:59:22.840-04:00  INFO 9533 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
-2026-03-11T18:59:22.841-04:00  INFO 9533 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+

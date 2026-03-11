@@ -13,14 +13,17 @@ export class QueuePage extends BasePage {
     /**
      * Add a queue with the given name and region
      */
-    async addQueue(name: string, region: string = 'us-east-1') {
+    async addQueue(name: string, region: string = 'us-east-1', waitForHidden: boolean = true) {
         const initialQueueCount = await this.getQueueCount();
         await this.click(this.btnAddQueue);
         await this.waitForSelector(this.addQueueForm);
         await this.fill(this.inputQueueIdentifier, name);
         await this.selectOption(this.selectRegion, region);
         await this.click(this.btnPrimary);
-        await this.page.locator(this.addQueueForm).waitFor({ state: 'hidden' });
+        
+        if (waitForHidden) {
+            await this.page.locator(this.addQueueForm).waitFor({ state: 'hidden' });
+        }
     }
 
     /**

@@ -148,6 +148,7 @@ test.describe('Visual Regression', () => {
 
         test('queue selected — Queue Info tab', async ({ page }) => {
             await queuePage.selectQueue(mockQueue.queueName);
+            await messagePage.setViewMode('table');
             await messagePage.switchTab('queue');
             await page.locator('.queue-details').waitFor({ state: 'visible' });
             await expect(page).toHaveScreenshot('05-queue-info.png', { maxDiffPixelRatio: 0.02 });

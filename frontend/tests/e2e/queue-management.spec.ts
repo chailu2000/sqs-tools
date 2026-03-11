@@ -3,7 +3,7 @@ import { generateValidQueueData, generateQueueName, generateRegion } from '../e2
 import { assertQueueCount, assertQueueExists, assertQueueNotExists, assertAddQueueModalVisible, assertQueueDetailsVisible, assertQueueOperationSuccess, assertQueueOperationFailure, assertAddQueueErrorVisible, assertNoQueuesMessageVisible } from '../e2e/utils/queueMatchers';
 import { QueuePage } from '../e2e/pages/QueuePage';
 import { SettingsPage } from '../e2e/pages/SettingsPage';
-import { setupAwsProfile, addTestQueue } from '../e2e/utils/test-setup';
+import { setupAwsProfile, addTestQueue, clearAllQueues } from '../e2e/utils/test-setup';
 
 test.describe('Queue Management Smoke Tests', () => {
     let queuePage: QueuePage;
@@ -12,6 +12,8 @@ test.describe('Queue Management Smoke Tests', () => {
     test.beforeEach(async ({ page }) => {
         queuePage = new QueuePage(page);
         settingsPage = new SettingsPage(page);
+
+        await clearAllQueues(page);
         await queuePage.goto();
         await queuePage.waitForPageLoad();
         await setupAwsProfile(settingsPage, 'sqs-tool', page);
@@ -25,7 +27,7 @@ test.describe('Queue Management Smoke Tests', () => {
         const region = 'us-east-1';
 
         // Ensure the queue is already present in the UI by adding it once
-        await addTestQueue(queuePage, queueName, region);
+        await addTestQueue(queuePage, queueName, region, page);
         const initialCount = await queuePage.getQueueCount();
 
         // Act - Attempt to add the same queue again
@@ -60,7 +62,7 @@ test.describe('Queue Management Smoke Tests', () => {
         const region = 'us-east-1';
 
         // Act
-        await queuePage.addQueue(nonExistentQueueName, region);
+        await queuePage.addQueue(nonExistentQueueName, region, false);
 
         // Assert - Error toast should be displayed
         await assertAddQueueErrorVisible(page, 'Queue not found');
@@ -74,7 +76,7 @@ test.describe('Queue Management Smoke Tests', () => {
         const region = 'us-east-1';
 
         // Add a queue to ensure it's present
-        await addTestQueue(queuePage, queueName, region);
+        await addTestQueue(queuePage, queueName, region, page);
 
         // Act - Initiate and confirm removal
         await queuePage.initiateRemoveQueue(queueName);

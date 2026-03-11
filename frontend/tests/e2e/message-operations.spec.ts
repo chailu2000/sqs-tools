@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { QueuePage } from './pages/QueuePage';
 import { MessagePage } from './pages/MessagePage';
 import { SettingsPage } from './pages/SettingsPage';
-import { setupAwsProfile, addTestQueue } from './utils/test-setup';
+import { setupAwsProfile, addTestQueue, clearAllQueues } from './utils/test-setup';
 import { generateQueueName, generateMessageBody } from './utils/test-data-generators';
 
 test.describe('Message Operations', () => {
@@ -19,9 +19,10 @@ test.describe('Message Operations', () => {
 
         testQueueName = 'test-queue-1';
 
+        await clearAllQueues(page);
         await page.goto('http://localhost:5173');
         await setupAwsProfile(settingsPage, 'sqs-tool', page);
-        await addTestQueue(queuePage, testQueueName, testRegion);
+        await addTestQueue(queuePage, testQueueName, testRegion, page);
         await queuePage.selectQueue(testQueueName);
     });
 

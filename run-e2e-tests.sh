@@ -18,7 +18,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo -e "${GREEN}Starting backend...${NC}"
-# Create data directory if it doesn't exist
+# Clear and recreate data directory for a clean slate
+rm -rf data
 mkdir -p data
 # Start backend in background
 java -jar build/libs/*.jar --spring.profiles.active=test > backend-test.log 2>&1 &
