@@ -61,7 +61,8 @@ test.describe('Error Handling', () => {
     // -------------------------------------------------------------------------
     test.describe('11.1 API error display', () => {
         test('should display error when receiving messages fails (500)', async ({ page }) => {
-            // Wait for the message page to be fully loaded after selectQueue
+            // Switch to table view where tab-main exists
+            await page.locator('[data-testid="view-mode-table"]').click();
             await page.waitForSelector('[data-testid="tab-main"]', { state: 'visible' });
 
             // Override to return 500
@@ -82,9 +83,6 @@ test.describe('Error Handling', () => {
         });
 
         test('should display error when sending a message fails (500)', async ({ page }) => {
-            // Wait for the message page to be fully loaded
-            await page.waitForSelector('[data-testid="tab-main"]', { state: 'visible' });
-
             // Route POST to messages to fail
             await page.route('**/api/queues/*/messages', async (route) => {
                 if (route.request().method() === 'POST') {
@@ -101,6 +99,9 @@ test.describe('Error Handling', () => {
             // Switch to Cards view (MessageViewer/Composer)
             await messagePage.setViewMode('cards');
 
+            // Wait for the message composer to be visible
+            await page.waitForSelector('.message-composer', { state: 'visible' });
+
             // Fill the message body and send
             await page.locator('#message-body').fill('Test message that should fail');
             await page.locator('.message-composer .btn-primary').click();
@@ -111,7 +112,8 @@ test.describe('Error Handling', () => {
         });
 
         test('should display error when purging a queue fails (500)', async ({ page }) => {
-            // Wait for the message page to be fully loaded
+            // Switch to table view where tab-queue exists
+            await page.locator('[data-testid="view-mode-table"]').click();
             await page.waitForSelector('[data-testid="tab-main"]', { state: 'visible' });
 
             await page.route('**/api/queues/*/purge', async (route) => {
@@ -198,6 +200,10 @@ test.describe('Error Handling', () => {
     // -------------------------------------------------------------------------
     test.describe('11.3 Network error handling', () => {
         test('should show error and keep UI usable when messages request is aborted', async ({ page }) => {
+            // Switch to table view where tab-main exists
+            await page.locator('[data-testid="view-mode-table"]').click();
+            await page.waitForSelector('[data-testid="tab-main"]', { state: 'visible' });
+
             // Abort the request — simulates a hard network failure
             await page.route('**/api/queues/*/messages*', async (route) => {
                 await route.abort('failed');
@@ -214,6 +220,10 @@ test.describe('Error Handling', () => {
         });
 
         test('should recover after a network error and successfully receive messages', async ({ page }) => {
+            // Switch to table view where tab-main exists
+            await page.locator('[data-testid="view-mode-table"]').click();
+            await page.waitForSelector('[data-testid="tab-main"]', { state: 'visible' });
+
             let callCount = 0;
 
             await page.route('**/api/queues/*/messages*', async (route) => {
