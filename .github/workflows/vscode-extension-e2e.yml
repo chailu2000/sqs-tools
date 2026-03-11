@@ -48,6 +48,8 @@ jobs:
         working-directory: vscode-extension/sqs-management-tool
         run: pnpm install --frozen-lockfile
       
+      - name: Install Xvfb for headless VS Code
+        run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Start LocalStack
         working-directory: vscode-extension/sqs-management-tool
         run: docker compose -f tests/e2e/config/docker-compose.localstack.yml up -d
@@ -78,7 +80,7 @@ jobs:
       
       - name: Run E2E tests
         working-directory: vscode-extension/sqs-management-tool
-        run: pnpm run test:e2e:ci
+        run: xvfb-run -a pnpm run test:e2e:ci
         timeout-minutes: 20
       
       - name: Upload test results
