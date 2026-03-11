@@ -92,6 +92,7 @@ jobs:
             vscode-extension/sqs-management-tool/test-results/
             vscode-extension/sqs-management-tool/.vscode-test/
           retention-days: 7
+          if-no-files-found: ignore
       
       - name: Upload screenshots on failure
         if: failure()
@@ -100,6 +101,7 @@ jobs:
           name: screenshots
           path: vscode-extension/sqs-management-tool/test-results/screenshots/
           retention-days: 7
+          if-no-files-found: ignore
       
       - name: Upload logs on failure
         if: failure()
@@ -108,6 +110,7 @@ jobs:
           name: logs
           path: vscode-extension/sqs-management-tool/test-results/logs/
           retention-days: 7
+          if-no-files-found: ignore
       
       - name: Show LocalStack logs on failure
         if: failure()
