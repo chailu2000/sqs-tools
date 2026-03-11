@@ -23,6 +23,3 @@ test-results/
 # Local configuration
 .vscode/*.json
 .vscode/*.code-snippets
-
-# pnpm-lock.yaml for pnpm
-pnpm-lock.yaml
