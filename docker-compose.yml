@@ -19,10 +19,9 @@ services:
       # Optional: mount your host AWS credentials for named profile support
       # Comment this line out if you prefer to use env vars instead.
       - ${HOME}/.aws:/root/.aws:ro
-    # Only expose the backend port to other Docker services (not to the host).
-    # To reach the API directly on the host, change to "8080:8080".
-    expose:
-      - "8080"
+    # Expose the backend port to the host for local testing and development.
+    ports:
+      - "8080:8080"
     healthcheck:
       # Use nc (netcat) to check TCP connectivity — no actuator dep required
       test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
