@@ -51,7 +51,11 @@ jobs:
 
       - name: Start backend
         working-directory: backend
-        run: java -jar build/libs/*.jar --spring.profiles.active=test &
+        run: |
+          echo "Starting backend..."
+          nohup java -jar build/libs/*.jar --spring.profiles.active=test > backend.log 2>&1 &
+          echo $! > backend.pid
+          echo "Backend started with PID $(cat backend.pid)"
         env:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
@@ -63,12 +67,15 @@ jobs:
           for i in $(seq 1 60); do
             if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
               echo "Backend is ready!"
+              curl -s http://localhost:8080/actuator/health | head -20
               exit 0
             fi
             echo "Attempt $i/60: Backend not ready yet..."
             sleep 2
           done
           echo "Backend failed to start within 120 seconds"
+          echo "Last 50 lines of backend log:"
+          tail -50 backend/backend.log || echo "No backend log found"
           exit 1
 
       # -----------------------------------------------------------------------
