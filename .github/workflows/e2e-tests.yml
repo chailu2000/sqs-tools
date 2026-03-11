@@ -83,33 +83,6 @@ jobs:
         run: pnpm run test:e2e:ci
         timeout-minutes: 20
       
-      - name: Generate coverage report
-        if: always()
-        working-directory: vscode-extension/sqs-management-tool
-        run: pnpm run test:e2e:coverage
-        continue-on-error: true
-      
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v4
-        with:
-          files: vscode-extension/sqs-management-tool/coverage/e2e/lcov.info
-          flags: e2e
-          name: e2e-coverage
-          fail_ci_if_error: false
-      
-      - name: Check coverage thresholds
-        if: always()
-        working-directory: vscode-extension/sqs-management-tool
-        run: |
-          if [ -f coverage/e2e/coverage-summary.json ]; then
-            echo "Coverage report generated successfully"
-            cat coverage/e2e/coverage-summary.json
-          else
-            echo "No coverage report found"
-          fi
-        shell: bash
-      
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
