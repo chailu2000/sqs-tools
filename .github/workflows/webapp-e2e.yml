@@ -107,7 +107,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Run Playwright E2E tests
         working-directory: frontend
-        run: pnpm exec playwright test --project=chromium
+        run: pnpm exec playwright test --project=chromium --reporter=list
         env:
           CI: true
 
