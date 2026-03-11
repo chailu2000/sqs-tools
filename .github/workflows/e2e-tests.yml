@@ -25,8 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18.x
-          cache: 'pnpm'
-          cache-dependency-path: 'vscode-extension/sqs-management-tool/pnpm-lock.yaml'
       
       - name: Cache VS Code binary
         uses: actions/cache@v4
