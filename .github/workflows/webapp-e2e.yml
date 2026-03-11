@@ -69,9 +69,8 @@ jobs:
         run: |
           echo "Waiting for backend to be ready..."
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:8080/api/config/region > /dev/null 2>&1; then
+            if curl -sf http://localhost:8080/api/queues > /dev/null 2>&1; then
               echo "Backend is ready!"
-              curl -s http://localhost:8080/api/config/region | head -20
               exit 0
             fi
             echo "Attempt $i/60: Backend not ready yet..."
