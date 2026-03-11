@@ -1,4 +1,4 @@
-name: E2E Tests
+name: VS Code Extension E2E Tests
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   e2e-tests:
-    name: E2E Tests
+    name: VS Code Extension E2E Tests
     runs-on: ubuntu-latest
     
     steps:
