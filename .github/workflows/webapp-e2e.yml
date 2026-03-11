@@ -49,6 +49,10 @@ jobs:
         working-directory: backend
         run: ./gradlew bootJar --no-daemon
 
+      - name: Create data directory for SQLite
+        working-directory: backend
+        run: mkdir -p data
+
       - name: Start backend
         working-directory: backend
         run: |
