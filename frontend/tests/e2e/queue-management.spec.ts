@@ -38,11 +38,11 @@ test.describe('Queue Management Smoke Tests', () => {
         await assertQueueExists(page, queueName);
     });
 
-    test.skip('Add new valid queue increases count', {
+    test('Add new valid queue increases count', {
         tag: '@queue @smoke'
     }, async ({ page }) => {
         // Arrange
-        const queueName = generateQueueName(); // Generate a new unique queue name
+        const queueName = 'test-queue-2';
         const region = 'us-east-1';
         const initialCount = await queuePage.getQueueCount();
 

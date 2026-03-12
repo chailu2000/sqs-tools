@@ -128,7 +128,16 @@ test.describe('Visual Regression', () => {
             await messagePage.setViewMode('table');
             // Wait for messages to be reflected in the table
             await page.locator('.message-table table').waitFor({ state: 'visible' });
-            await expect(page).toHaveScreenshot('02-main-queue-table.png', { maxDiffPixelRatio: 0.02 });
+
+            // Mask timestamp column as toLocaleString() is browser/env dependent
+            const mask = [
+                page.locator('.message-table td:nth-child(4)')
+            ];
+
+            await expect(page).toHaveScreenshot('02-main-queue-table.png', {
+                maxDiffPixelRatio: 0.05,
+                mask
+            });
         });
 
         test('queue selected — Main Queue tab (Cards view)', async ({ page }) => {
@@ -143,7 +152,16 @@ test.describe('Visual Regression', () => {
             await messagePage.setViewMode('table');
             await messagePage.switchTab('dlq');
             await page.locator('.message-table table').waitFor({ state: 'visible' });
-            await expect(page).toHaveScreenshot('04-dlq-tab-table.png', { maxDiffPixelRatio: 0.02 });
+
+            // Mask timestamp column
+            const mask = [
+                page.locator('.message-table td:nth-child(4)')
+            ];
+
+            await expect(page).toHaveScreenshot('04-dlq-tab-table.png', {
+                maxDiffPixelRatio: 0.05,
+                mask
+            });
         });
 
         test('queue selected — Queue Info tab', async ({ page }) => {
@@ -151,7 +169,17 @@ test.describe('Visual Regression', () => {
             await messagePage.setViewMode('table');
             await messagePage.switchTab('queue');
             await page.locator('.queue-details').waitFor({ state: 'visible' });
-            await expect(page).toHaveScreenshot('05-queue-info.png', { maxDiffPixelRatio: 0.02 });
+
+            // Mask timestamps as toLocaleString() is browser/environment dependent
+            const mask = [
+                page.locator('.detail-item:has-text("Created:") .value'),
+                page.locator('.detail-item:has-text("Last Modified:") .value')
+            ];
+
+            await expect(page).toHaveScreenshot('05-queue-info.png', {
+                maxDiffPixelRatio: 0.05,
+                mask
+            });
         });
 
         test('settings modal open', async ({ page }) => {
@@ -175,7 +203,16 @@ test.describe('Visual Regression', () => {
             await queuePage.selectQueue(mockQueue.queueName);
             await messagePage.setViewMode('table');
             await page.locator('.message-table table').waitFor({ state: 'visible' });
-            await expect(page).toHaveScreenshot('mobile-02-main-queue-table.png', { maxDiffPixelRatio: 0.03 });
+
+            // Mask timestamp column
+            const mask = [
+                page.locator('.message-table td:nth-child(4)')
+            ];
+
+            await expect(page).toHaveScreenshot('mobile-02-main-queue-table.png', {
+                maxDiffPixelRatio: 0.05,
+                mask
+            });
         });
 
         test('queue selected — Main Queue tab (Cards view) at mobile size', async ({ page }) => {

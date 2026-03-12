@@ -52,7 +52,7 @@ test.describe('Message Operations', () => {
         expect(count).toBeGreaterThanOrEqual(0); // It could be 0 due to sampling or visibility timeouts
     });
 
-    test.skip('should delete a message from the queue', async ({ page }) => {
+    test('should delete a message from the queue', async ({ page }) => {
         // Send a message first
         const messageBody = generateMessageBody();
         await messagePage.sendMessage(messageBody);
