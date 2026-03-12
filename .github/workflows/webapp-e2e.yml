@@ -40,7 +40,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: frontend
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps
 
       # -----------------------------------------------------------------------
       # Build & start backend
@@ -49,9 +49,9 @@ jobs:
         working-directory: backend
         run: ./gradlew bootJar --no-daemon
 
-      - name: Create data directory for SQLite
+      - name: Clear previous state
         working-directory: backend
-        run: mkdir -p data
+        run: rm -rf data && mkdir -p data
 
       - name: Start backend
         working-directory: backend
@@ -82,32 +82,11 @@ jobs:
           exit 1
 
       # -----------------------------------------------------------------------
-      # Start frontend dev server (used by webServer config in playwright.config)
-      # -----------------------------------------------------------------------
-      - name: Start frontend dev server
-        working-directory: frontend
-        run: pnpm run dev &
-
-      - name: Wait for frontend to be ready
-        run: |
-          echo "Waiting for frontend to be ready..."
-          for i in $(seq 1 60); do
-            if curl -sf http://localhost:5173 > /dev/null 2>&1; then
-              echo "Frontend is ready!"
-              exit 0
-            fi
-            echo "Attempt $i/60: Frontend not ready yet..."
-            sleep 2
-          done
-          echo "Frontend failed to start within 120 seconds"
-          exit 1
-
-      # -----------------------------------------------------------------------
       # Run E2E tests (Chromium only in CI for speed; remove --project to run all)
       # -----------------------------------------------------------------------
       - name: Run Playwright E2E tests
         working-directory: frontend
-        run: pnpm exec playwright test --project=chromium --reporter=list
+        run: pnpm exec playwright test --reporter=list
         env:
           CI: true
 
