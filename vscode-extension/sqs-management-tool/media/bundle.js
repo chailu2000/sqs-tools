@@ -3962,8 +3962,9 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     /**
      * Send a message to the queue
      */
-    async sendMessage(queueId, body, attributes, delaySeconds, messageGroupId, messageDeduplicationId) {
+    async sendMessage(queueId, body, attributes, delaySeconds, messageGroupId, messageDeduplicationId, dlq = false) {
       const promise = waitForMessage("messageSent");
+      console.log("[API Adapter] sendMessage called with dlq:", dlq);
       vscode.postMessage({
         command: "sendMessage",
         queueId,
@@ -3971,7 +3972,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
         attributes,
         delaySeconds,
         messageGroupId,
-        messageDeduplicationId
+        messageDeduplicationId,
+        dlq
       });
       await promise;
     },
@@ -4420,7 +4422,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
         get(attributes).filter((attr) => attr.key.trim() && attr.value.trim()).forEach((attr) => {
           messageAttributes[attr.key] = { dataType: attr.dataType || "String", stringValue: attr.value };
         });
-        const result = await api.sendMessage(store.selectedQueue.id, get(messageBody), messageAttributes, get(delaySeconds), get(isFifoQueue) ? get(messageGroupId) : void 0, get(isFifoQueue) && get(messageDeduplicationId) ? get(messageDeduplicationId) : void 0);
+        const result = await api.sendMessage(store.selectedQueue.id, get(messageBody), messageAttributes, get(delaySeconds), get(isFifoQueue) ? get(messageGroupId) : void 0, get(isFifoQueue) && get(messageDeduplicationId) ? get(messageDeduplicationId) : void 0, store.activeTab === "dlq");
         set(success, `Message sent successfully!`);
         setTimeout(() => set(success, null), 5e3);
         set(messageBody, "");
@@ -4589,17 +4591,14 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       // Default to 0 for extension (peek mode)
     );
     let waitTimeSeconds = /* @__PURE__ */ state(
-      20
-      // Use max long polling by default
+      0
+      // Short polling by default for better UI responsiveness
     );
     let peek = /* @__PURE__ */ state(
       true
       // Enabled by default as it's the desired behavior for this tool
     );
-    let activeTab = /* @__PURE__ */ state(
-      "queue"
-      // Default to queue info for extension
-    );
+    let activeTab = /* @__PURE__ */ user_derived(() => store.activeTab);
     let polling = /* @__PURE__ */ state(false);
     let pollCount = /* @__PURE__ */ state(0);
     let pollProgress = /* @__PURE__ */ state(0);
@@ -4813,7 +4812,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
           messageId: m.messageId,
           receiptHandle: m.receiptHandle,
           body: m.body,
-          messageAttributes: m.messageAttributes
+          messageAttributes: m.messageAttributes,
+          attributes: m.attributes
         }));
         console.log("[Webview] Calling api.redriveSelectedMessages with:", {
           queueId: store.selectedQueue.id,
@@ -4866,7 +4866,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       return text.length > length ? text.substring(0, length) + "..." : text;
     }
     function switchTab(tab) {
-      set(activeTab, tab, true);
+      store.setActiveTab(tab);
       set(currentPage, 1);
       store.clearSelection();
     }
