@@ -51,8 +51,12 @@
             setTimeout(() => (successMessage = null), 10000);
             confirmDelete = null;
         } catch (err) {
-            error =
-                err instanceof Error ? err.message : "Failed to delete message";
+            const errMsg = err instanceof Error ? err.message : String(err);
+            if (errMsg.includes("ReceiptHandle is invalid") || errMsg.includes("expired")) {
+                error = "Failed to delete message: The receipt handle has expired. This often happens in 'Peek Mode' or if the visibility timeout elapsed. Please click 'Receive Messages' again to delete.";
+            } else {
+                error = errMsg;
+            }
         }
     }
 
@@ -259,6 +263,23 @@
                             </button>
                         </div>
                     </div>
+
+                    {#if message.attributes.MessageGroupId || message.attributes.MessageDeduplicationId}
+                        <div class="message-system-attributes">
+                            {#if message.attributes.MessageGroupId}
+                                <div class="attribute">
+                                    <span class="attr-key">Group ID:</span>
+                                    <span class="attr-value">{message.attributes.MessageGroupId}</span>
+                                </div>
+                            {/if}
+                            {#if message.attributes.MessageDeduplicationId}
+                                <div class="attribute">
+                                    <span class="attr-key">Deduplication ID:</span>
+                                    <span class="attr-value">{message.attributes.MessageDeduplicationId}</span>
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
 
                     {#if message.messageAttributes && Object.keys(message.messageAttributes).length > 0}
                         <div class="message-attributes">
@@ -502,6 +523,17 @@
 
     .btn-danger-small:hover {
         background: #ffcdd2;
+    }
+
+    .message-system-attributes {
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        padding: 0.5rem;
+        background: #e3f2fd;
+        border-radius: 4px;
     }
 
     .message-attributes {

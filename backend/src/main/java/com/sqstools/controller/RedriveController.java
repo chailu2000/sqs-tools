@@ -93,6 +93,7 @@ public class RedriveController {
         private String receiptHandle;
         private String body;
         private Map<String, Object> messageAttributes;
+        private Map<String, Object> attributes;
 
         public String getMessageId() {
             return messageId;
@@ -124,6 +125,14 @@ public class RedriveController {
 
         public void setMessageAttributes(Map<String, Object> messageAttributes) {
             this.messageAttributes = messageAttributes;
+        }
+
+        public Map<String, Object> getAttributes() {
+            return attributes;
+        }
+
+        public void setAttributes(Map<String, Object> attributes) {
+            this.attributes = attributes;
         }
     }
 

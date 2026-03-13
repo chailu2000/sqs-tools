@@ -3,83 +3,96 @@ import * as vscode from 'vscode';
 const BACKEND_BASE_URL = 'http://localhost:8080/api';
 
 interface QueueConfiguration {
-    id: string;
-    queueUrl: string;
-    queueName: string;
-    region: string;
-    attributes: Record<string, any>;
-    dlqUrl?: string;
-    dlqName?: string;
-    savedAt: string;
+  id: string;
+  queueUrl: string;
+  queueName: string;
+  region: string;
+  attributes: Record<string, any>;
+  dlqUrl?: string;
+  dlqName?: string;
+  savedAt: string;
 }
 
 async function request<T>(
-    endpoint: string,
-    options: RequestInit = {}
+  endpoint: string,
+  options: RequestInit = {}
 ): Promise<T> {
-    const url = `${BACKEND_BASE_URL}${endpoint}`;
+  const url = `${BACKEND_BASE_URL}${endpoint}`;
 
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
 
-        if (!response.ok) {
-                let errorMessage = `HTTP error! Status: ${response.status}`;
-                try {
-                    const errorBody: any = await response.json();
-                    errorMessage = errorBody.message || errorMessage;
-                } catch (jsonError) {
-                    // If response is not JSON, use status text
-                    errorMessage = response.statusText || errorMessage;
-                }
-                throw new Error(errorMessage);
-            }
-
-            if (response.status === 204) {
-                return null as T;
-            }
-
-            return (await response.json()) as T;
-        } catch (error: any) {
-        if (error.cause && error.cause.code === 'ECONNREFUSED') {
-            throw new Error('Connection to backend refused. Is the backend server running?');
-        }
-        throw new Error(`Network error or backend not reachable: ${error.message}`);
+    if (!response.ok) {
+      let errorMessage = `HTTP error! Status: ${response.status}`;
+      try {
+        const errorBody: any = await response.json();
+        errorMessage = errorBody.message || errorMessage;
+      } catch (jsonError) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
+
+    if (response.status === 204) {
+      return null as T;
+    }
+
+    return (await response.json()) as T;
+  } catch (error: any) {
+    if (error.cause && error.cause.code === 'ECONNREFUSED') {
+      throw new Error('Connection to backend refused. Is the backend server running?');
+    }
+    throw new Error(`Network error or backend not reachable: ${error.message}`);
+  }
 }
 
 export async function getAwsProfiles(): Promise<string[]> {
-    return request<string[]>('/config/profiles');
+  return request<string[]>('/config/profiles');
 }
 
 export async function setAwsProfile(profileName: string): Promise<{ success: boolean }> {
-    return request<{ success: boolean }>('/config/profile', {
-        method: 'POST',
-        body: JSON.stringify({ profileName }),
-    });
+  return request<{ success: boolean }>('/config/profile', {
+    method: 'POST',
+    body: JSON.stringify({ profileName }),
+  });
 }
 
-export async function sendMessage(queueId: string, messageBody: string, delaySeconds: number = 0, messageAttributes: Record<string, string> = {}): Promise<{ success: boolean }> {
+export async function sendMessage(
+  queueId: string,
+  messageBody: string,
+  delaySeconds: number = 0,
+  messageAttributes: Record<string, any> = {},
+  messageGroupId?: string,
+  messageDeduplicationId?: string
+): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`/queues/${queueId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ body: messageBody, delaySeconds, messageAttributes }),
+    body: JSON.stringify({
+      body: messageBody,
+      delaySeconds,
+      messageAttributes,
+      messageGroupId,
+      messageDeduplicationId
+    }),
   });
 }
 
 export async function getAllQueues(): Promise<QueueConfiguration[]> {
-    return request<QueueConfiguration[]>('/queues');
+  return request<QueueConfiguration[]>('/queues');
 }
 
 export async function addQueue(identifier: string, region: string): Promise<QueueConfiguration> {
-    return request<QueueConfiguration>('/queues', {
-        method: 'POST',
-        body: JSON.stringify({ identifier, region }),
-    });
+  return request<QueueConfiguration>('/queues', {
+    method: 'POST',
+    body: JSON.stringify({ identifier, region }),
+  });
 }
 
 export async function receiveMessages(

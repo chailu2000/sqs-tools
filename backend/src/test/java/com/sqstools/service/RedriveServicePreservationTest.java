@@ -36,443 +36,535 @@ import static org.mockito.Mockito.*;
  */
 class RedriveServicePreservationTest {
 
-    /**
-     * Property 2.1: Redrive All Continues to Process Messages in Batches
-     * 
-     * This property tests that the "Redrive All" functionality continues to work
-     * as it currently does: processing all DLQ messages in batches of up to 10,
-     * sending them to the main queue, and deleting them from the DLQ.
-     * 
-     * **Validates: Requirement 3.1, 3.2**
-     * 
-     * EXPECTED OUTCOME: PASS on both unfixed and fixed code
-     */
-    @Property
-    @Label("Property 2.1: Redrive All processes all DLQ messages in batches")
-    void redriveAllShouldProcessMessagesInBatches(
-            @ForAll("redriveAllScenarios") RedriveAllScenario scenario) {
+        /**
+         * Property 2.1: Redrive All Continues to Process Messages in Batches
+         * 
+         * This property tests that the "Redrive All" functionality continues to work
+         * as it currently does: processing all DLQ messages in batches of up to 10,
+         * sending them to the main queue, and deleting them from the DLQ.
+         * 
+         * **Validates: Requirement 3.1, 3.2**
+         * 
+         * EXPECTED OUTCOME: PASS on both unfixed and fixed code
+         */
+        @Property
+        @Label("Property 2.1: Redrive All processes all DLQ messages in batches")
+        void redriveAllShouldProcessMessagesInBatches(
+                        @ForAll("redriveAllScenarios") RedriveAllScenario scenario) {
 
-        // Setup mocks
-        MessageService messageService = mock(MessageService.class);
-        RedriveService redriveService = new RedriveService(messageService);
+                // Setup mocks
+                MessageService messageService = mock(MessageService.class);
+                RedriveService redriveService = new RedriveService(messageService);
 
-        // Setup: Mock receiveMessages to return batches
-        when(messageService.receiveMessages(
-                eq(scenario.dlqUrl),
-                eq(scenario.region),
-                anyInt(),
-                any(),
-                anyInt()))
-                .thenReturn(scenario.firstBatch)
-                .thenReturn(scenario.secondBatch)
-                .thenReturn(Collections.emptyList()); // No more messages
+                // Setup: Mock receiveMessages to return batches
+                when(messageService.receiveMessages(
+                                eq(scenario.dlqUrl),
+                                eq(scenario.region),
+                                anyInt(),
+                                any(),
+                                anyInt()))
+                                .thenReturn(scenario.firstBatch)
+                                .thenReturn(scenario.secondBatch)
+                                .thenReturn(Collections.emptyList()); // No more messages
 
-        // Setup: Mock successful send and delete
-        when(messageService.sendMessage(
-                eq(scenario.mainQueueUrl),
-                eq(scenario.region),
-                anyString(),
-                any(),
-                any())).thenReturn("sent-msg-id");
-
-        doNothing().when(messageService).deleteMessage(
-                eq(scenario.dlqUrl),
-                eq(scenario.region),
-                anyString());
-
-        // Execute: Redrive All
-        RedriveResult result = redriveService.redriveMessages(
-                scenario.dlqUrl,
-                scenario.mainQueueUrl,
-                scenario.region,
-                null,
-                true); // redriveAll = true
-
-        // Verify: All messages were processed
-        int totalMessages = scenario.firstBatch.size() + scenario.secondBatch.size();
-        assertThat(result.getProcessedCount())
-                .as("Redrive All should process all messages from all batches")
-                .isEqualTo(totalMessages);
-
-        assertThat(result.getSuccessCount())
-                .as("All messages should be successfully redriven")
-                .isEqualTo(totalMessages);
-
-        assertThat(result.getFailureCount())
-                .as("No failures should occur in normal operation")
-                .isEqualTo(0);
-
-        // Verify: Messages were received in batches (max 10 per batch)
-        verify(messageService, atLeastOnce()).receiveMessages(
-                eq(scenario.dlqUrl),
-                eq(scenario.region),
-                intThat(max -> max <= 10),
-                any(),
-                anyInt());
-
-        // Verify: Each message was sent to main queue
-        verify(messageService, times(totalMessages)).sendMessage(
-                eq(scenario.mainQueueUrl),
-                eq(scenario.region),
-                anyString(),
-                any(),
-                any());
-
-        // Verify: Each message was deleted from DLQ
-        verify(messageService, times(totalMessages)).deleteMessage(
-                eq(scenario.dlqUrl),
-                eq(scenario.region),
-                anyString());
-    }
-
-    /**
-     * Property 2.2: Messages Deleted from DLQ Only After Successful Send
-     * 
-     * This property tests that the atomic operation behavior is preserved:
-     * messages are deleted from the DLQ only after they are successfully sent
-     * to the main queue. If the send fails, the message should not be deleted.
-     * 
-     * **Validates: Requirement 3.5**
-     * 
-     * EXPECTED OUTCOME: PASS on both unfixed and fixed code
-     */
-    @Property
-    @Label("Property 2.2: Messages deleted from DLQ only after successful send to main queue")
-    void messagesShouldBeDeletedOnlyAfterSuccessfulSend(
-            @ForAll("atomicOperationScenarios") AtomicOperationScenario scenario) {
-
-        // Setup mocks
-        MessageService messageService = mock(MessageService.class);
-        RedriveService redriveService = new RedriveService(messageService);
-
-        // Setup: Mock receiveMessages
-        when(messageService.receiveMessages(
-                eq(scenario.dlqUrl),
-                eq(scenario.region),
-                anyInt(),
-                any(),
-                anyInt()))
-                .thenReturn(scenario.messages)
-                .thenReturn(Collections.emptyList());
-
-        // Setup: Mock sendMessage to fail for specific messages
-        for (int i = 0; i < scenario.messages.size(); i++) {
-            Message msg = scenario.messages.get(i);
-            if (scenario.failureIndices.contains(i)) {
+                // Setup: Mock successful send and delete
                 when(messageService.sendMessage(
-                        eq(scenario.mainQueueUrl),
-                        eq(scenario.region),
-                        eq(msg.body()),
-                        any(),
-                        any()))
-                        .thenThrow(new RuntimeException("Send failed"));
-            } else {
+                                eq(scenario.mainQueueUrl),
+                                eq(scenario.region),
+                                anyString(),
+                                any(),
+                                any(),
+                                any(),
+                                any())).thenReturn("sent-msg-id");
+
+                doNothing().when(messageService).deleteMessage(
+                                eq(scenario.dlqUrl),
+                                eq(scenario.region),
+                                anyString());
+
+                // Execute: Redrive All
+                RedriveResult result = redriveService.redriveMessages(
+                                scenario.dlqUrl,
+                                scenario.mainQueueUrl,
+                                scenario.region,
+                                null,
+                                true); // redriveAll = true
+
+                // Verify: All messages were processed
+                int totalMessages = scenario.firstBatch.size() + scenario.secondBatch.size();
+                assertThat(result.getProcessedCount())
+                                .as("Redrive All should process all messages from all batches")
+                                .isEqualTo(totalMessages);
+
+                assertThat(result.getSuccessCount())
+                                .as("All messages should be successfully redriven")
+                                .isEqualTo(totalMessages);
+
+                assertThat(result.getFailureCount())
+                                .as("No failures should occur in normal operation")
+                                .isEqualTo(0);
+
+                // Verify: Messages were received in batches (max 10 per batch)
+                verify(messageService, atLeastOnce()).receiveMessages(
+                                eq(scenario.dlqUrl),
+                                eq(scenario.region),
+                                intThat(max -> max <= 10),
+                                any(),
+                                anyInt());
+
+                // Verify: Each message was sent to main queue
+                verify(messageService, times(totalMessages)).sendMessage(
+                                eq(scenario.mainQueueUrl),
+                                eq(scenario.region),
+                                anyString(),
+                                any(),
+                                any(),
+                                any(),
+                                any());
+
+                // Verify: Each message was deleted from DLQ
+                verify(messageService, times(totalMessages)).deleteMessage(
+                                eq(scenario.dlqUrl),
+                                eq(scenario.region),
+                                anyString());
+        }
+
+        /**
+         * Property 2.2: Messages Deleted from DLQ Only After Successful Send
+         * 
+         * This property tests that the atomic operation behavior is preserved:
+         * messages are deleted from the DLQ only after they are successfully sent
+         * to the main queue. If the send fails, the message should not be deleted.
+         * 
+         * **Validates: Requirement 3.5**
+         * 
+         * EXPECTED OUTCOME: PASS on both unfixed and fixed code
+         */
+        @Property
+        @Label("Property 2.2: Messages deleted from DLQ only after successful send to main queue")
+        void messagesShouldBeDeletedOnlyAfterSuccessfulSend(
+                        @ForAll("atomicOperationScenarios") AtomicOperationScenario scenario) {
+
+                // Setup mocks
+                MessageService messageService = mock(MessageService.class);
+                RedriveService redriveService = new RedriveService(messageService);
+
+                // Setup: Mock receiveMessages
+                when(messageService.receiveMessages(
+                                eq(scenario.dlqUrl),
+                                eq(scenario.region),
+                                anyInt(),
+                                any(),
+                                anyInt()))
+                                .thenReturn(scenario.messages)
+                                .thenReturn(Collections.emptyList());
+
+                // Setup: Mock sendMessage to fail for specific messages
+                for (int i = 0; i < scenario.messages.size(); i++) {
+                        Message msg = scenario.messages.get(i);
+                        if (scenario.failureIndices.contains(i)) {
+                                when(messageService.sendMessage(
+                                                eq(scenario.mainQueueUrl),
+                                                eq(scenario.region),
+                                                eq(msg.body()),
+                                                any(),
+                                                any(),
+                                                any(),
+                                                any()))
+                                                .thenThrow(new RuntimeException("Send failed"));
+                        } else {
+                                when(messageService.sendMessage(
+                                                eq(scenario.mainQueueUrl),
+                                                eq(scenario.region),
+                                                eq(msg.body()),
+                                                any(),
+                                                any(),
+                                                any(),
+                                                any()))
+                                                .thenReturn("sent-" + msg.messageId());
+                        }
+                }
+
+                // Execute: Redrive All
+                RedriveResult result = redriveService.redriveMessages(
+                                scenario.dlqUrl,
+                                scenario.mainQueueUrl,
+                                scenario.region,
+                                null,
+                                true);
+
+                // Verify: Only successfully sent messages were deleted
+                int expectedSuccesses = scenario.messages.size() - scenario.failureIndices.size();
+                assertThat(result.getSuccessCount())
+                                .as("Only messages that were successfully sent should be counted as success")
+                                .isEqualTo(expectedSuccesses);
+
+                assertThat(result.getFailureCount())
+                                .as("Failed sends should be counted as failures")
+                                .isEqualTo(scenario.failureIndices.size());
+
+                // Verify: Delete was called only for successfully sent messages
+                verify(messageService, times(expectedSuccesses)).deleteMessage(
+                                eq(scenario.dlqUrl),
+                                eq(scenario.region),
+                                anyString());
+
+                // Verify: Delete was NOT called for failed messages
+                for (int failureIndex : scenario.failureIndices) {
+                        Message failedMsg = scenario.messages.get(failureIndex);
+                        verify(messageService, never()).deleteMessage(
+                                        eq(scenario.dlqUrl),
+                                        eq(scenario.region),
+                                        eq(failedMsg.receiptHandle()));
+                }
+        }
+
+        /**
+         * Property 2.3: Message Attributes Preserved During Redrive
+         * 
+         * This property tests that when messages are redriven, all their attributes
+         * are correctly preserved and passed to the main queue.
+         * 
+         * **Validates: Requirement 3.3**
+         * 
+         * EXPECTED OUTCOME: PASS on both unfixed and fixed code
+         */
+        @Property
+        @Label("Property 2.3: Message attributes are preserved during redrive operations")
+        void messageAttributesShouldBePreservedDuringRedrive(
+                        @ForAll("messagesWithAttributes") List<Message> messages) {
+
+                // Setup mocks
+                MessageService messageService = mock(MessageService.class);
+                RedriveService redriveService = new RedriveService(messageService);
+
+                String dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
+                String mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
+                String region = "us-east-1";
+
+                // Setup: Mock receiveMessages
+                when(messageService.receiveMessages(
+                                eq(dlqUrl),
+                                eq(region),
+                                anyInt(),
+                                any(),
+                                anyInt()))
+                                .thenReturn(messages)
+                                .thenReturn(Collections.emptyList());
+
+                // Setup: Mock successful send
                 when(messageService.sendMessage(
-                        eq(scenario.mainQueueUrl),
-                        eq(scenario.region),
-                        eq(msg.body()),
-                        any(),
-                        any()))
-                        .thenReturn("sent-" + msg.messageId());
-            }
+                                anyString(),
+                                anyString(),
+                                anyString(),
+                                any(),
+                                any(),
+                                any(),
+                                any())).thenReturn("sent-msg-id");
+
+                // Execute: Redrive All
+                redriveService.redriveMessages(dlqUrl, mainQueueUrl, region, null, true);
+
+                // Verify: Each message was sent with its original attributes
+                for (Message message : messages) {
+                        verify(messageService).sendMessage(
+                                        eq(mainQueueUrl),
+                                        eq(region),
+                                        eq(message.body()),
+                                        eq(message.messageAttributes()),
+                                        any(),
+                                        any(),
+                                        any());
+                }
         }
 
-        // Execute: Redrive All
-        RedriveResult result = redriveService.redriveMessages(
-                scenario.dlqUrl,
-                scenario.mainQueueUrl,
-                scenario.region,
-                null,
-                true);
+        /**
+         * Property 2.4: FIFO Attributes Preserved During Redrive
+         * 
+         * This property tests specifically that MessageGroupId and
+         * MessageDeduplicationId
+         * are preserved during redrive operations.
+         */
+        @Property
+        @Label("Property 2.4: FIFO attributes (GroupId, DeduplicationId) are preserved during redrive")
+        void fifoAttributesShouldBePreservedDuringRedrive(
+                        @ForAll("fifoMessages") List<Message> messages) {
 
-        // Verify: Only successfully sent messages were deleted
-        int expectedSuccesses = scenario.messages.size() - scenario.failureIndices.size();
-        assertThat(result.getSuccessCount())
-                .as("Only messages that were successfully sent should be counted as success")
-                .isEqualTo(expectedSuccesses);
+                // Setup mocks
+                MessageService messageService = mock(MessageService.class);
+                RedriveService redriveService = new RedriveService(messageService);
 
-        assertThat(result.getFailureCount())
-                .as("Failed sends should be counted as failures")
-                .isEqualTo(scenario.failureIndices.size());
+                String dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq.fifo";
+                String mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue.fifo";
+                String region = "us-east-1";
 
-        // Verify: Delete was called only for successfully sent messages
-        verify(messageService, times(expectedSuccesses)).deleteMessage(
-                eq(scenario.dlqUrl),
-                eq(scenario.region),
-                anyString());
+                // Setup: Mock receiveMessages
+                when(messageService.receiveMessages(eq(dlqUrl), eq(region), anyInt(), any(), anyInt()))
+                                .thenReturn(messages)
+                                .thenReturn(Collections.emptyList());
 
-        // Verify: Delete was NOT called for failed messages
-        for (int failureIndex : scenario.failureIndices) {
-            Message failedMsg = scenario.messages.get(failureIndex);
-            verify(messageService, never()).deleteMessage(
-                    eq(scenario.dlqUrl),
-                    eq(scenario.region),
-                    eq(failedMsg.receiptHandle()));
-        }
-    }
+                // Setup: Mock successful send
+                when(messageService.sendMessage(anyString(), anyString(), anyString(), any(), any(), any(), any()))
+                                .thenReturn("sent-msg-id");
 
-    /**
-     * Property 2.3: Message Attributes Preserved During Redrive
-     * 
-     * This property tests that when messages are redriven, all their attributes
-     * are correctly preserved and passed to the main queue.
-     * 
-     * **Validates: Requirement 3.3**
-     * 
-     * EXPECTED OUTCOME: PASS on both unfixed and fixed code
-     */
-    @Property
-    @Label("Property 2.3: Message attributes are preserved during redrive operations")
-    void messageAttributesShouldBePreservedDuringRedrive(
-            @ForAll("messagesWithAttributes") List<Message> messages) {
+                // Execute: Redrive All
+                redriveService.redriveMessages(dlqUrl, mainQueueUrl, region, null, true);
 
-        // Setup mocks
-        MessageService messageService = mock(MessageService.class);
-        RedriveService redriveService = new RedriveService(messageService);
+                // Verify: Each message was sent with its original FIFO attributes
+                for (Message message : messages) {
+                        String expectedGroupId = message.attributes().get(
+                                        software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName.MESSAGE_GROUP_ID);
+                        String expectedDedupeId = message.attributes().get(
+                                        software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID);
 
-        String dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
-        String mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
-        String region = "us-east-1";
-
-        // Setup: Mock receiveMessages
-        when(messageService.receiveMessages(
-                eq(dlqUrl),
-                eq(region),
-                anyInt(),
-                any(),
-                anyInt()))
-                .thenReturn(messages)
-                .thenReturn(Collections.emptyList());
-
-        // Setup: Mock successful send
-        when(messageService.sendMessage(
-                anyString(),
-                anyString(),
-                anyString(),
-                any(),
-                any())).thenReturn("sent-msg-id");
-
-        // Execute: Redrive All
-        redriveService.redriveMessages(dlqUrl, mainQueueUrl, region, null, true);
-
-        // Verify: Each message was sent with its original attributes
-        for (Message message : messages) {
-            verify(messageService).sendMessage(
-                    eq(mainQueueUrl),
-                    eq(region),
-                    eq(message.body()),
-                    eq(message.messageAttributes()),
-                    any());
-        }
-    }
-
-    /**
-     * Property 2.4: Redrive All Respects Batch Size Limits
-     * 
-     * This property tests that Redrive All continues to respect SQS batch size
-     * limits (max 10 messages per receive operation).
-     * 
-     * **Validates: Requirement 3.1**
-     * 
-     * EXPECTED OUTCOME: PASS on both unfixed and fixed code
-     */
-    @Property
-    @Label("Property 2.4: Redrive All respects SQS batch size limits")
-    void redriveAllShouldRespectBatchSizeLimits(
-            @ForAll("totalMessageCount") int totalMessages) {
-
-        // Setup mocks
-        MessageService messageService = mock(MessageService.class);
-        RedriveService redriveService = new RedriveService(messageService);
-
-        String dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
-        String mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
-        String region = "us-east-1";
-
-        // Setup: Create batches of messages (max 10 per batch)
-        List<List<Message>> batches = new ArrayList<>();
-        for (int i = 0; i < totalMessages; i += 10) {
-            int batchSize = Math.min(10, totalMessages - i);
-            List<Message> batch = new ArrayList<>();
-            for (int j = 0; j < batchSize; j++) {
-                batch.add(Message.builder()
-                        .messageId("msg-" + (i + j))
-                        .body("body-" + (i + j))
-                        .receiptHandle("receipt-" + (i + j))
-                        .build());
-            }
-            batches.add(batch);
+                        verify(messageService).sendMessage(
+                                        eq(mainQueueUrl),
+                                        eq(region),
+                                        eq(message.body()),
+                                        eq(message.messageAttributes()),
+                                        isNull(),
+                                        eq(expectedGroupId),
+                                        eq(expectedDedupeId));
+                }
         }
 
-        // Setup: Mock receiveMessages to return batches
-        when(messageService.receiveMessages(
-                eq(dlqUrl),
-                eq(region),
-                anyInt(),
-                any(),
-                anyInt()))
-                .thenReturn(batches.get(0),
-                        batches.subList(1, batches.size()).toArray(new List[0]))
-                .thenReturn(Collections.emptyList());
+        /**
+         * Property 2.4: Redrive All Respects Batch Size Limits
+         * 
+         * This property tests that Redrive All continues to respect SQS batch size
+         * limits (max 10 messages per receive operation).
+         * 
+         * **Validates: Requirement 3.1**
+         * 
+         * EXPECTED OUTCOME: PASS on both unfixed and fixed code
+         */
+        @Property
+        @Label("Property 2.4: Redrive All respects SQS batch size limits")
+        void redriveAllShouldRespectBatchSizeLimits(
+                        @ForAll("totalMessageCount") int totalMessages) {
 
-        // Setup: Mock successful operations
-        when(messageService.sendMessage(anyString(), anyString(), anyString(), any(), any()))
-                .thenReturn("sent-msg-id");
+                // Setup mocks
+                MessageService messageService = mock(MessageService.class);
+                RedriveService redriveService = new RedriveService(messageService);
 
-        // Execute: Redrive All
-        RedriveResult result = redriveService.redriveMessages(
-                dlqUrl, mainQueueUrl, region, null, true);
+                String dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
+                String mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
+                String region = "us-east-1";
 
-        // Verify: All messages were processed
-        assertThat(result.getProcessedCount())
-                .as("All messages should be processed")
-                .isEqualTo(totalMessages);
+                // Setup: Create batches of messages (max 10 per batch)
+                List<List<Message>> batches = new ArrayList<>();
+                for (int i = 0; i < totalMessages; i += 10) {
+                        int batchSize = Math.min(10, totalMessages - i);
+                        List<Message> batch = new ArrayList<>();
+                        for (int j = 0; j < batchSize; j++) {
+                                batch.add(Message.builder()
+                                                .messageId("msg-" + (i + j))
+                                                .body("body-" + (i + j))
+                                                .receiptHandle("receipt-" + (i + j))
+                                                .build());
+                        }
+                        batches.add(batch);
+                }
 
-        // Verify: receiveMessages was called with max 10 messages per call
-        verify(messageService, atLeastOnce()).receiveMessages(
-                eq(dlqUrl),
-                eq(region),
-                intThat(max -> max <= 10),
-                any(),
-                anyInt());
-    }
+                // Setup: Mock receiveMessages to return batches
+                when(messageService.receiveMessages(
+                                eq(dlqUrl),
+                                eq(region),
+                                anyInt(),
+                                any(),
+                                anyInt()))
+                                .thenReturn(batches.get(0),
+                                                batches.subList(1, batches.size()).toArray(new List[0]))
+                                .thenReturn(Collections.emptyList());
 
-    // ========== Arbitrary Generators ==========
+                // Setup: Mock successful operations
+                when(messageService.sendMessage(anyString(), anyString(), anyString(), any(), any(), any(), any()))
+                                .thenReturn("sent-msg-id");
 
-    /**
-     * Generates total message counts for batch size testing
-     */
-    @Provide
-    Arbitrary<Integer> totalMessageCount() {
-        return Arbitraries.integers().between(1, 50);
-    }
+                // Execute: Redrive All
+                RedriveResult result = redriveService.redriveMessages(
+                                dlqUrl, mainQueueUrl, region, null, true);
 
-    /**
-     * Generates scenarios for Redrive All with multiple batches of messages
-     */
-    @Provide
-    Arbitrary<RedriveAllScenario> redriveAllScenarios() {
-        return Combinators.combine(
-                Arbitraries.integers().between(1, 10), // First batch size
-                Arbitraries.integers().between(0, 10) // Second batch size
-        ).as((firstBatchSize, secondBatchSize) -> {
-            RedriveAllScenario scenario = new RedriveAllScenario();
-            scenario.dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
-            scenario.mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
-            scenario.region = "us-east-1";
+                // Verify: All messages were processed
+                assertThat(result.getProcessedCount())
+                                .as("All messages should be processed")
+                                .isEqualTo(totalMessages);
 
-            // Generate first batch
-            scenario.firstBatch = new ArrayList<>();
-            for (int i = 0; i < firstBatchSize; i++) {
-                scenario.firstBatch.add(Message.builder()
-                        .messageId("msg-batch1-" + i)
-                        .body("body-batch1-" + i)
-                        .receiptHandle("receipt-batch1-" + i)
-                        .build());
-            }
+                // Verify: receiveMessages was called with max 10 messages per call
+                verify(messageService, atLeastOnce()).receiveMessages(
+                                eq(dlqUrl),
+                                eq(region),
+                                intThat(max -> max <= 10),
+                                any(),
+                                anyInt());
+        }
 
-            // Generate second batch
-            scenario.secondBatch = new ArrayList<>();
-            for (int i = 0; i < secondBatchSize; i++) {
-                scenario.secondBatch.add(Message.builder()
-                        .messageId("msg-batch2-" + i)
-                        .body("body-batch2-" + i)
-                        .receiptHandle("receipt-batch2-" + i)
-                        .build());
-            }
+        // ========== Arbitrary Generators ==========
 
-            return scenario;
-        });
-    }
+        /**
+         * Generates FIFO messages with GroupId and DeduplicationId
+         */
+        @Provide
+        Arbitrary<List<Message>> fifoMessages() {
+                return Arbitraries.integers().between(1, 5).flatMap(count -> {
+                        List<Arbitrary<Message>> messageArbitraries = new ArrayList<>();
+                        for (int i = 0; i < count; i++) {
+                                final int index = i;
+                                messageArbitraries.add(
+                                                Combinators.combine(
+                                                                Arbitraries.strings().withCharRange('a', 'z')
+                                                                                .ofLength(5),
+                                                                Arbitraries.strings().withCharRange('0', '9')
+                                                                                .ofLength(10))
+                                                                .as((groupId, dedupeId) -> Message.builder()
+                                                                                .messageId("msg-" + index)
+                                                                                .body("body-" + index)
+                                                                                .receiptHandle("receipt-" + index)
+                                                                                .attributes(Map.of(
+                                                                                                software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName.MESSAGE_GROUP_ID,
+                                                                                                groupId,
+                                                                                                software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID,
+                                                                                                dedupeId))
+                                                                                .build()));
+                        }
+                        return Combinators.combine(messageArbitraries).as(messages -> messages);
+                });
+        }
 
-    /**
-     * Generates scenarios for testing atomic operations (delete only if send
-     * succeeds)
-     */
-    @Provide
-    Arbitrary<AtomicOperationScenario> atomicOperationScenarios() {
-        return Combinators.combine(
-                Arbitraries.integers().between(2, 8), // Number of messages
-                Arbitraries.integers().between(0, 3) // Number of failures
-        ).as((messageCount, failureCount) -> {
-            AtomicOperationScenario scenario = new AtomicOperationScenario();
-            scenario.dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
-            scenario.mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
-            scenario.region = "us-east-1";
+        /**
+         * Generates total message counts for batch size testing
+         */
+        @Provide
+        Arbitrary<Integer> totalMessageCount() {
+                return Arbitraries.integers().between(1, 50);
+        }
 
-            // Generate messages
-            scenario.messages = new ArrayList<>();
-            for (int i = 0; i < messageCount; i++) {
-                scenario.messages.add(Message.builder()
-                        .messageId("msg-" + i)
-                        .body("body-" + i)
-                        .receiptHandle("receipt-" + i)
-                        .build());
-            }
+        /**
+         * Generates scenarios for Redrive All with multiple batches of messages
+         */
+        @Provide
+        Arbitrary<RedriveAllScenario> redriveAllScenarios() {
+                return Combinators.combine(
+                                Arbitraries.integers().between(1, 10), // First batch size
+                                Arbitraries.integers().between(0, 10) // Second batch size
+                ).as((firstBatchSize, secondBatchSize) -> {
+                        RedriveAllScenario scenario = new RedriveAllScenario();
+                        scenario.dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
+                        scenario.mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
+                        scenario.region = "us-east-1";
 
-            // Generate random failure indices
-            scenario.failureIndices = new HashSet<>();
-            Random random = new Random();
-            int actualFailures = Math.min(failureCount, messageCount);
-            while (scenario.failureIndices.size() < actualFailures) {
-                scenario.failureIndices.add(random.nextInt(messageCount));
-            }
+                        // Generate first batch
+                        scenario.firstBatch = new ArrayList<>();
+                        for (int i = 0; i < firstBatchSize; i++) {
+                                scenario.firstBatch.add(Message.builder()
+                                                .messageId("msg-batch1-" + i)
+                                                .body("body-batch1-" + i)
+                                                .receiptHandle("receipt-batch1-" + i)
+                                                .build());
+                        }
 
-            return scenario;
-        });
-    }
+                        // Generate second batch
+                        scenario.secondBatch = new ArrayList<>();
+                        for (int i = 0; i < secondBatchSize; i++) {
+                                scenario.secondBatch.add(Message.builder()
+                                                .messageId("msg-batch2-" + i)
+                                                .body("body-batch2-" + i)
+                                                .receiptHandle("receipt-batch2-" + i)
+                                                .build());
+                        }
 
-    /**
-     * Generates messages with various attributes
-     */
-    @Provide
-    Arbitrary<List<Message>> messagesWithAttributes() {
-        return Arbitraries.integers().between(1, 5).flatMap(count -> {
-            List<Arbitrary<Message>> messageArbitraries = new ArrayList<>();
-            for (int i = 0; i < count; i++) {
-                final int index = i;
-                messageArbitraries.add(
-                        Arbitraries.of(true, false).map(hasAttributes -> {
-                            Message.Builder builder = Message.builder()
-                                    .messageId("msg-" + index)
-                                    .body("body-" + index)
-                                    .receiptHandle("receipt-" + index);
+                        return scenario;
+                });
+        }
 
-                            if (hasAttributes) {
-                                Map<String, MessageAttributeValue> attributes = new HashMap<>();
-                                attributes.put("attr1", MessageAttributeValue.builder()
-                                        .dataType("String")
-                                        .stringValue("value1")
-                                        .build());
-                                attributes.put("attr2", MessageAttributeValue.builder()
-                                        .dataType("Number")
-                                        .stringValue("123")
-                                        .build());
-                                builder.messageAttributes(attributes);
-                            }
+        /**
+         * Generates scenarios for testing atomic operations (delete only if send
+         * succeeds)
+         */
+        @Provide
+        Arbitrary<AtomicOperationScenario> atomicOperationScenarios() {
+                return Combinators.combine(
+                                Arbitraries.integers().between(2, 8), // Number of messages
+                                Arbitraries.integers().between(0, 3) // Number of failures
+                ).as((messageCount, failureCount) -> {
+                        AtomicOperationScenario scenario = new AtomicOperationScenario();
+                        scenario.dlqUrl = "https://sqs.us-east-1.amazonaws.com/123/test-dlq";
+                        scenario.mainQueueUrl = "https://sqs.us-east-1.amazonaws.com/123/test-queue";
+                        scenario.region = "us-east-1";
 
-                            return builder.build();
-                        }));
-            }
-            return Combinators.combine(messageArbitraries).as(messages -> messages);
-        });
-    }
+                        // Generate messages
+                        scenario.messages = new ArrayList<>();
+                        for (int i = 0; i < messageCount; i++) {
+                                scenario.messages.add(Message.builder()
+                                                .messageId("msg-" + i)
+                                                .body("body-" + i)
+                                                .receiptHandle("receipt-" + i)
+                                                .build());
+                        }
 
-    // ========== Test Scenario Classes ==========
+                        // Generate random failure indices
+                        scenario.failureIndices = new HashSet<>();
+                        Random random = new Random();
+                        int actualFailures = Math.min(failureCount, messageCount);
+                        while (scenario.failureIndices.size() < actualFailures) {
+                                scenario.failureIndices.add(random.nextInt(messageCount));
+                        }
 
-    static class RedriveAllScenario {
-        String dlqUrl;
-        String mainQueueUrl;
-        String region;
-        List<Message> firstBatch;
-        List<Message> secondBatch;
-    }
+                        return scenario;
+                });
+        }
 
-    static class AtomicOperationScenario {
-        String dlqUrl;
-        String mainQueueUrl;
-        String region;
-        List<Message> messages;
-        Set<Integer> failureIndices; // Indices of messages that should fail to send
-    }
+        /**
+         * Generates messages with various attributes
+         */
+        @Provide
+        Arbitrary<List<Message>> messagesWithAttributes() {
+                return Arbitraries.integers().between(1, 5).flatMap(count -> {
+                        List<Arbitrary<Message>> messageArbitraries = new ArrayList<>();
+                        for (int i = 0; i < count; i++) {
+                                final int index = i;
+                                messageArbitraries.add(
+                                                Arbitraries.of(true, false).map(hasAttributes -> {
+                                                        Message.Builder builder = Message.builder()
+                                                                        .messageId("msg-" + index)
+                                                                        .body("body-" + index)
+                                                                        .receiptHandle("receipt-" + index);
+
+                                                        if (hasAttributes) {
+                                                                Map<String, MessageAttributeValue> attributes = new HashMap<>();
+                                                                attributes.put("attr1", MessageAttributeValue.builder()
+                                                                                .dataType("String")
+                                                                                .stringValue("value1")
+                                                                                .build());
+                                                                attributes.put("attr2", MessageAttributeValue.builder()
+                                                                                .dataType("Number")
+                                                                                .stringValue("123")
+                                                                                .build());
+                                                                builder.messageAttributes(attributes);
+                                                        }
+
+                                                        return builder.build();
+                                                }));
+                        }
+                        return Combinators.combine(messageArbitraries).as(messages -> messages);
+                });
+        }
+
+        // ========== Test Scenario Classes ==========
+
+        static class RedriveAllScenario {
+                String dlqUrl;
+                String mainQueueUrl;
+                String region;
+                List<Message> firstBatch;
+                List<Message> secondBatch;
+        }
+
+        static class AtomicOperationScenario {
+                String dlqUrl;
+                String mainQueueUrl;
+                String region;
+                List<Message> messages;
+                Set<Integer> failureIndices; // Indices of messages that should fail to send
+        }
 }

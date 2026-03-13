@@ -38,10 +38,16 @@ public class RedriveService {
                 processed++;
                 result.setProcessedCount(processed);
 
+                String messageGroupId = message.attributes()
+                        .get(software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName.MESSAGE_GROUP_ID);
+                String messageDeduplicationId = message.attributes().get(
+                        software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID);
+
                 try {
                     // Send to main queue
                     Map<String, MessageAttributeValue> attributes = message.messageAttributes();
-                    messageService.sendMessage(mainQueueUrl, region, message.body(), attributes, null);
+                    messageService.sendMessage(mainQueueUrl, region, message.body(), attributes, null, messageGroupId,
+                            messageDeduplicationId);
 
                     // Delete from DLQ only if send succeeded
                     messageService.deleteMessage(dlqUrl, region, message.receiptHandle());
@@ -73,8 +79,18 @@ public class RedriveService {
                 Map<String, MessageAttributeValue> attributes = convertMessageAttributes(
                         messageDetails.getMessageAttributes());
 
+                // Extract FIFO attributes if present in system attributes
+                String messageGroupId = null;
+                String messageDeduplicationId = null;
+
+                if (messageDetails.getAttributes() != null) {
+                    messageGroupId = (String) messageDetails.getAttributes().get("MessageGroupId");
+                    messageDeduplicationId = (String) messageDetails.getAttributes().get("MessageDeduplicationId");
+                }
+
                 // Send to main queue
-                messageService.sendMessage(mainQueueUrl, region, messageDetails.getBody(), attributes, null);
+                messageService.sendMessage(mainQueueUrl, region, messageDetails.getBody(), attributes, null,
+                        messageGroupId, messageDeduplicationId);
 
                 // Delete from DLQ only if send succeeded (atomic operation)
                 messageService.deleteMessage(dlqUrl, region, messageDetails.getReceiptHandle());

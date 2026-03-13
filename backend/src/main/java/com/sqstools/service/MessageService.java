@@ -66,11 +66,19 @@ public class MessageService {
 
     public String sendMessage(String queueUrl, String region, String body,
             Map<String, MessageAttributeValue> attributes, Integer delaySeconds) {
+        return sendMessage(queueUrl, region, body, attributes, delaySeconds, null, null);
+    }
+
+    public String sendMessage(String queueUrl, String region, String body,
+            Map<String, MessageAttributeValue> attributes, Integer delaySeconds,
+            String messageGroupId, String messageDeduplicationId) {
         SqsClient client = clientFactory.getClient(region);
 
         SendMessageRequest.Builder requestBuilder = SendMessageRequest.builder()
                 .queueUrl(queueUrl)
-                .messageBody(body);
+                .messageBody(body)
+                .messageGroupId(messageGroupId)
+                .messageDeduplicationId(messageDeduplicationId);
 
         if (attributes != null && !attributes.isEmpty()) {
             requestBuilder.messageAttributes(attributes);

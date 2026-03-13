@@ -106,9 +106,15 @@ export class RedriveService {
                             result.processedCount++;
 
                             try {
+                                // Preserve FIFO attributes if present
+                                const messageGroupId = message.attributes ? message.attributes.MessageGroupId : undefined;
+                                const messageDeduplicationId = message.attributes ? message.attributes.MessageDeduplicationId : undefined;
+
                                 // Send to main queue with original attributes
                                 await this.sqsService.sendMessage(mainQueueUrl, message.body, {
-                                    messageAttributes: message.messageAttributes
+                                    messageAttributes: message.messageAttributes,
+                                    messageGroupId,
+                                    messageDeduplicationId
                                 });
 
                                 // Delete from DLQ only on successful send
@@ -203,9 +209,15 @@ export class RedriveService {
                         });
 
                         try {
+                            // Preserve FIFO attributes if present
+                            const messageGroupId = message.attributes ? message.attributes.MessageGroupId : undefined;
+                            const messageDeduplicationId = message.attributes ? message.attributes.MessageDeduplicationId : undefined;
+
                             // Send to main queue with original attributes
                             await this.sqsService.sendMessage(mainQueueUrl, message.body, {
-                                messageAttributes: message.messageAttributes
+                                messageAttributes: message.messageAttributes,
+                                messageGroupId,
+                                messageDeduplicationId
                             });
 
                             // Delete from DLQ only on successful send

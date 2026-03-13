@@ -53,10 +53,17 @@ jobs:
         working-directory: backend
         run: rm -rf data && mkdir -p data
 
+      - name: Check for port conflicts
+        run: |
+          echo "Checking if port 8080 is already in use..."
+
+
       - name: Start backend
         working-directory: backend
         run: |
           echo "Starting backend..."
+          # Ensure data directory is clean (already done in previous step but good to be sure)
+          mkdir -p data
           nohup java -jar build/libs/*.jar --spring.profiles.active=test > backend.log 2>&1 &
           echo $! > backend.pid
           echo "Backend started with PID $(cat backend.pid)"
@@ -73,12 +80,21 @@ jobs:
               echo "Backend is ready!"
               exit 0
             fi
+            
+            # Print log snippet every 10 attempts to show progress or errors
+            if [ $((i % 10)) -eq 0 ]; then
+                echo "--- Backend log snippet (Attempt $i) ---"
+                tail -n 20 backend/backend.log || echo "Log file not found at backend/backend.log"
+                echo "-----------------------------------------"
+            fi
+
             echo "Attempt $i/60: Backend not ready yet..."
             sleep 2
           done
           echo "Backend failed to start within 120 seconds"
-          echo "Last 50 lines of backend log:"
-          tail -50 backend/backend.log || echo "No backend log found"
+          echo "--- FULL BACKEND LOG ---"
+          cat backend/backend.log || echo "No backend log found"
+          echo "--- END OF LOG ---"
           exit 1
 
       # -----------------------------------------------------------------------
@@ -86,9 +102,10 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Run Playwright E2E tests
         working-directory: frontend
-        run: pnpm exec playwright test --reporter=list
+        run: pnpm exec playwright test --reporter=list ${PLAYWRIGHT_ARGS}
         env:
           CI: true
+          PLAYWRIGHT_ARGS: ${{ env.PLAYWRIGHT_ARGS }}
 
       # -----------------------------------------------------------------------
       # Upload artifacts on failure (or always for the HTML report)

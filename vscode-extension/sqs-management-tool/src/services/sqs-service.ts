@@ -336,10 +336,15 @@ export class SQSService implements ISQSService {
             for (const message of messages) {
                 result.processedCount++;
 
+                const messageGroupId = message.attributes ? message.attributes.MessageGroupId : undefined;
+                const messageDeduplicationId = message.attributes ? message.attributes.MessageDeduplicationId : undefined;
+
                 try {
                     // Send to main queue with original attributes
                     await this.sendMessage(mainQueueUrl, message.body, {
-                        messageAttributes: message.messageAttributes
+                        messageAttributes: message.messageAttributes,
+                        messageGroupId,
+                        messageDeduplicationId
                     });
 
                     // Delete from DLQ only on successful send
@@ -382,10 +387,15 @@ export class SQSService implements ISQSService {
         for (const message of messages) {
             result.processedCount++;
 
+            const messageGroupId = message.attributes ? message.attributes.MessageGroupId : undefined;
+            const messageDeduplicationId = message.attributes ? message.attributes.MessageDeduplicationId : undefined;
+
             try {
                 // Send to main queue with original attributes
                 await this.sendMessage(mainQueueUrl, message.body, {
-                    messageAttributes: message.messageAttributes
+                    messageAttributes: message.messageAttributes,
+                    messageGroupId,
+                    messageDeduplicationId
                 });
 
                 // Delete from DLQ only on successful send

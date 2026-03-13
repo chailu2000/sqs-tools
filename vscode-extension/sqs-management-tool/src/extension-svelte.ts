@@ -269,12 +269,18 @@ export function activate(context: vscode.ExtensionContext) {
 
                                 for (const msg of messages) {
                                     try {
+                                        // Extract FIFO attributes if present in system attributes
+                                        const messageGroupId = msg.attributes ? msg.attributes.MessageGroupId : undefined;
+                                        const messageDeduplicationId = msg.attributes ? msg.attributes.MessageDeduplicationId : undefined;
+
                                         // Send message to main queue
                                         await sendMessage(
                                             message.queueId,
                                             msg.body,
                                             0, // no delay
-                                            msg.messageAttributes || {}
+                                            msg.messageAttributes || {},
+                                            messageGroupId,
+                                            messageDeduplicationId
                                         );
 
                                         // Delete from DLQ

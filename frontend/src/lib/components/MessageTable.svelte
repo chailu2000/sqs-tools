@@ -264,6 +264,12 @@
                     );
                 }
             } catch (err) {
+                const errMsg = err instanceof Error ? err.message : String(err);
+                if (errMsg.includes("ReceiptHandle is invalid") || errMsg.includes("expired")) {
+                    error = "Failed to delete some messages: The receipt handle has expired. This often happens in 'Peek Mode' or if the visibility timeout elapsed. Please disable Peek Mode and click 'Receive Once' again to delete.";
+                } else {
+                    error = `Failed to delete message ${msg.messageId}: ${errMsg}`;
+                }
                 console.error(
                     `Failed to delete message ${msg.messageId}:`,
                     err,
@@ -299,7 +305,12 @@
             setTimeout(() => (successMessage = null), 10000);
             confirmDeleteSingle = null;
         } catch (err) {
-            error = err instanceof Error ? err.message : "Failed to delete message";
+            const errMsg = err instanceof Error ? err.message : String(err);
+            if (errMsg.includes("ReceiptHandle is invalid") || errMsg.includes("expired")) {
+                error = "Failed to delete message: The receipt handle has expired. This often happens in 'Peek Mode' or if the visibility timeout elapsed. Please disable Peek Mode and click 'Receive Once' again to delete.";
+            } else {
+                error = errMsg;
+            }
         }
     }
 
@@ -329,6 +340,7 @@
                     receiptHandle: m.receiptHandle,
                     body: m.body,
                     messageAttributes: m.messageAttributes,
+                    attributes: m.attributes
                 }));
 
             const result = await api.redriveSelectedMessages(
@@ -498,9 +510,10 @@
                     />
                 </label>
 
-                <label class="checkbox-label" title="Immediately reset visibility timeout to 0 so message stays available for other consumers">
+                <label class="checkbox-label" title="Immediately reset visibility timeout to 0 so message stays available for other consumers. NOTE: Deletion is not possible in Peek Mode as ownership is released.">
                     <input type="checkbox" bind:checked={peek} />
                     Peek Mode (keep available)
+                    <span class="hint-icon" title="Deletion is not possible in Peek Mode">ℹ️</span>
                 </label>
 
                 <button
@@ -786,6 +799,18 @@
                             >{selectedMessage.receiptHandle}</span
                         >
                     </div>
+                    {#if selectedMessage.attributes.MessageGroupId}
+                        <div class="detail-row">
+                            <strong>Message Group ID:</strong>
+                            <span class="monospace">{selectedMessage.attributes.MessageGroupId}</span>
+                        </div>
+                    {/if}
+                    {#if selectedMessage.attributes.MessageDeduplicationId}
+                        <div class="detail-row">
+                            <strong>Message Deduplication ID:</strong>
+                            <span class="monospace">{selectedMessage.attributes.MessageDeduplicationId}</span>
+                        </div>
+                    {/if}
                     {#if selectedMessage.messageAttributes && Object.keys(selectedMessage.messageAttributes).length > 0}
                         <div class="detail-row">
                             <strong>Message Attributes:</strong>
@@ -1126,6 +1151,17 @@
         width: 1.2rem;
         height: 1.2rem;
         cursor: pointer;
+    }
+
+    .hint-icon {
+        margin-left: 0.5rem;
+        font-size: 0.8rem;
+        cursor: help;
+        opacity: 0.7;
+    }
+
+    .hint-icon:hover {
+        opacity: 1;
     }
 
     .pagination {

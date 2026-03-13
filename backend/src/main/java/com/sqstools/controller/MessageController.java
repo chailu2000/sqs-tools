@@ -104,7 +104,9 @@ public class MessageController {
                 config.getRegion(),
                 request.getBody(),
                 awsAttributes,
-                request.getDelaySeconds());
+                request.getDelaySeconds(),
+                request.getMessageGroupId(),
+                request.getMessageDeduplicationId());
 
         Map<String, Object> response = new HashMap<>();
         response.put("messageId", messageId);
@@ -151,6 +153,8 @@ public class MessageController {
         private String body;
         private Map<String, MessageAttributeDto> attributes;
         private Integer delaySeconds;
+        private String messageGroupId;
+        private String messageDeduplicationId;
 
         public String getBody() {
             return body;
@@ -174,6 +178,22 @@ public class MessageController {
 
         public void setDelaySeconds(Integer delaySeconds) {
             this.delaySeconds = delaySeconds;
+        }
+
+        public String getMessageGroupId() {
+            return messageGroupId;
+        }
+
+        public void setMessageGroupId(String messageGroupId) {
+            this.messageGroupId = messageGroupId;
+        }
+
+        public String getMessageDeduplicationId() {
+            return messageDeduplicationId;
+        }
+
+        public void setMessageDeduplicationId(String messageDeduplicationId) {
+            this.messageDeduplicationId = messageDeduplicationId;
         }
     }
 

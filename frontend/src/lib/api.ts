@@ -120,11 +120,13 @@ class ApiClient {
         queueId: string,
         body: string,
         attributes?: Record<string, any>,
-        delaySeconds?: number
+        delaySeconds?: number,
+        messageGroupId?: string,
+        messageDeduplicationId?: string
     ): Promise<{ messageId: string; success: boolean }> {
         return this.request(`/queues/${queueId}/messages`, {
             method: 'POST',
-            body: JSON.stringify({ body, attributes, delaySeconds }),
+            body: JSON.stringify({ body, attributes, delaySeconds, messageGroupId, messageDeduplicationId }),
         });
     }
 
@@ -159,7 +161,7 @@ class ApiClient {
 
     async redriveSelectedMessages(
         queueId: string,
-        messages: Array<{ messageId: string; receiptHandle: string; body: string; messageAttributes: any }>
+        messages: Array<{ messageId: string; receiptHandle: string; body: string; messageAttributes: any; attributes?: any }>
     ): Promise<RedriveResult> {
         return this.request(`/queues/${queueId}/redrive/selective`, {
             method: 'POST',

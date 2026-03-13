@@ -10,6 +10,11 @@
     let error = $state<string | null>(null);
     let success = $state<string | null>(null);
 
+    let messageGroupId = $state("");
+    let messageDeduplicationId = $state("");
+
+    const isFifo = $derived(store.selectedQueue?.queueName.endsWith(".fifo") || false);
+
     function addAttribute() {
         attributes = [...attributes, { key: "", value: "", dataType: "String" }];
     }
@@ -34,6 +39,11 @@
 
         if (!messageBody.trim()) {
             error = "Message body is required";
+            return;
+        }
+
+        if (isFifo && !messageGroupId.trim()) {
+            error = "Message Group ID is required for FIFO queues";
             return;
         }
 
@@ -66,6 +76,8 @@
                 messageBody,
                 messageAttributes,
                 delaySeconds,
+                isFifo ? messageGroupId : undefined,
+                isFifo ? messageDeduplicationId : undefined
             );
 
             success = `Message sent successfully! Message ID: ${result.messageId}`;
@@ -74,6 +86,8 @@
             messageBody = "";
             attributes = [];
             delaySeconds = 0;
+            messageGroupId = "";
+            messageDeduplicationId = "";
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Failed to send message";
@@ -103,17 +117,47 @@
             Validate JSON format
         </label>
 
-        <label>
-            Delay (seconds):
-            <input
-                type="number"
-                bind:value={delaySeconds}
-                min="0"
-                max="900"
-                class="input-small"
-            />
-        </label>
+        {#if !isFifo}
+            <label>
+                Delay (seconds):
+                <input
+                    type="number"
+                    bind:value={delaySeconds}
+                    min="0"
+                    max="900"
+                    class="input-small"
+                />
+            </label>
+        {/if}
     </div>
+
+    {#if isFifo}
+        <div class="fifo-section">
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="message-group-id">Message Group ID *:</label>
+                    <input
+                        id="message-group-id"
+                        type="text"
+                        bind:value={messageGroupId}
+                        placeholder="Enter group ID..."
+                        class="input-full"
+                    />
+                </div>
+                <div class="form-group flex-1">
+                    <label for="message-dedupe-id">Message Deduplication ID:</label>
+                    <input
+                        id="message-dedupe-id"
+                        type="text"
+                        bind:value={messageDeduplicationId}
+                        placeholder="Enter deduplication ID (optional)..."
+                        class="input-full"
+                    />
+                </div>
+            </div>
+            <p class="help-text">FIFO queues require a Message Group ID. Deduplication ID is optional if content-based deduplication is enabled.</p>
+        </div>
+    {/if}
 
     <div class="attributes-section">
         <div class="attributes-header">
@@ -367,6 +411,33 @@
     .btn-primary:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .fifo-section {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #e3f2fd;
+        border-radius: 4px;
+        border-left: 4px solid #2196f3;
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+        color: #666;
+        margin: 0.5rem 0 0 0;
+        font-style: italic;
+    }
+
+    .flex-1 {
+        flex: 1;
+    }
+
+    .input-full {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
     }
 
     @media (prefers-color-scheme: dark) {
