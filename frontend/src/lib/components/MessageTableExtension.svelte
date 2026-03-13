@@ -13,7 +13,7 @@
     let visibilityTimeout = $state(0); // Default to 0 for extension (peek mode)
     let waitTimeSeconds = $state(20); // Use max long polling by default
     let peek = $state(true); // Enabled by default as it's the desired behavior for this tool
-    let activeTab = $state<"queue" | "main" | "dlq">("queue"); // Default to queue info for extension
+    let activeTab = $derived(store.activeTab);
     let polling = $state(false);
     let pollCount = $state(0);
     let pollProgress = $state(0);
@@ -411,7 +411,7 @@
     }
 
     function switchTab(tab: "queue" | "main" | "dlq") {
-        activeTab = tab;
+        store.setActiveTab(tab);
         currentPage = 1;
         store.clearSelection();
     }

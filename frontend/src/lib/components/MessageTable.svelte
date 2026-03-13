@@ -12,7 +12,7 @@
     let visibilityTimeout = $state(30);
     let waitTimeSeconds = $state(20); // Use max long polling by default
     let peek = $state(true); // Enabled by default as it's the desired behavior for this tool
-    let activeTab = $state<"queue" | "main" | "dlq">("main");
+    let activeTab = $derived(store.activeTab);
     let polling = $state(false);
     let pollCount = $state(0);
     let pollProgress = $state(0);
@@ -423,7 +423,7 @@
     }
 
     function switchTab(tab: "queue" | "main" | "dlq") {
-        activeTab = tab;
+        store.setActiveTab(tab);
         currentPage = 1;
         store.clearSelection();
     }

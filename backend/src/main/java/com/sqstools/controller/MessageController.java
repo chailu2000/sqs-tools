@@ -74,10 +74,19 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> sendMessage(
             @PathVariable String queueId,
+            @RequestParam(required = false, defaultValue = "false") boolean dlq,
             @RequestBody SendMessageRequest request) {
 
         QueueConfiguration config = configService.loadQueue(queueId)
                 .orElseThrow(() -> new RuntimeException("Queue not found"));
+
+        String targetQueueUrl = config.getQueueUrl();
+        if (dlq) {
+            if (config.getDlqUrl() == null) {
+                throw new RuntimeException("Queue does not have a DLQ configured");
+            }
+            targetQueueUrl = config.getDlqUrl();
+        }
 
         // Convert DTO to AWS SDK MessageAttributeValue
         Map<String, MessageAttributeValue> awsAttributes = null;
@@ -100,7 +109,7 @@ public class MessageController {
         }
 
         String messageId = messageService.sendMessage(
-                config.getQueueUrl(),
+                targetQueueUrl,
                 config.getRegion(),
                 request.getBody(),
                 awsAttributes,

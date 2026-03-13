@@ -184,9 +184,11 @@ export const api = {
         attributes?: { [key: string]: string },
         delaySeconds?: number,
         messageGroupId?: string,
-        messageDeduplicationId?: string
+        messageDeduplicationId?: string,
+        dlq: boolean = false
     ): Promise<void> {
         const promise = waitForMessage<{ success: boolean }>('messageSent');
+        console.log('[API Adapter] sendMessage called with dlq:', dlq);
 
         vscode.postMessage({
             command: 'sendMessage',
@@ -195,7 +197,8 @@ export const api = {
             attributes,
             delaySeconds,
             messageGroupId,
-            messageDeduplicationId
+            messageDeduplicationId,
+            dlq
         });
 
         await promise;
@@ -224,6 +227,3 @@ export const api = {
         throw new Error('getQueueConfiguration not supported in extension context');
     }
 };
-
-// Export type for use in components
-export type { Message, QueueConfiguration, RedriveResult };

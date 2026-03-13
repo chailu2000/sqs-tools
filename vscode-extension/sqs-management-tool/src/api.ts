@@ -70,9 +70,11 @@ export async function sendMessage(
   delaySeconds: number = 0,
   messageAttributes: Record<string, any> = {},
   messageGroupId?: string,
-  messageDeduplicationId?: string
+  messageDeduplicationId?: string,
+  dlq: boolean = false
 ): Promise<{ success: boolean }> {
-  return request<{ success: boolean }>(`/queues/${queueId}/messages`, {
+  const query = dlq ? '?dlq=true' : '';
+  return request<{ success: boolean }>(`/queues/${queueId}/messages${query}`, {
     method: 'POST',
     body: JSON.stringify({
       body: messageBody,

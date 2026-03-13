@@ -77,7 +77,8 @@
                 messageAttributes,
                 delaySeconds,
                 isFifo ? messageGroupId : undefined,
-                isFifo ? messageDeduplicationId : undefined
+                isFifo ? messageDeduplicationId : undefined,
+                store.activeTab === 'dlq'
             );
 
             success = `Message sent successfully! Message ID: ${result.messageId}`;

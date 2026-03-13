@@ -122,9 +122,11 @@ class ApiClient {
         attributes?: Record<string, any>,
         delaySeconds?: number,
         messageGroupId?: string,
-        messageDeduplicationId?: string
+        messageDeduplicationId?: string,
+        dlq: boolean = false
     ): Promise<{ messageId: string; success: boolean }> {
-        return this.request(`/queues/${queueId}/messages`, {
+        const query = dlq ? '?dlq=true' : '';
+        return this.request(`/queues/${queueId}/messages${query}`, {
             method: 'POST',
             body: JSON.stringify({ body, attributes, delaySeconds, messageGroupId, messageDeduplicationId }),
         });

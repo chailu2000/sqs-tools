@@ -87,6 +87,7 @@
                 delaySeconds,
                 isFifoQueue ? messageGroupId : undefined,
                 isFifoQueue && messageDeduplicationId ? messageDeduplicationId : undefined,
+                store.activeTab === 'dlq'
             );
 
             success = `Message sent successfully!`;

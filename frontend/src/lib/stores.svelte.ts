@@ -12,7 +12,7 @@ class AppStore {
     dlqMessages = $state<Message[]>([]);
     searchTerm = $state('');
     viewMode = $state<ViewMode>('cards');
-    activeTab = $state<'main' | 'dlq'>('main');
+    activeTab = $state<'queue' | 'main' | 'dlq'>('main');
     selectedMessageIds = $state<Set<string>>(new Set());
     loading = $state({
         queues: false,
@@ -86,7 +86,7 @@ class AppStore {
         this.viewMode = mode;
     }
 
-    setActiveTab(tab: 'main' | 'dlq') {
+    setActiveTab(tab: 'queue' | 'main' | 'dlq') {
         this.activeTab = tab;
     }
 

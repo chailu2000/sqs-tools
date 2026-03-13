@@ -222,7 +222,10 @@ export function activate(context: vscode.ExtensionContext) {
                                     message.queueId,
                                     message.body,
                                     message.delaySeconds,
-                                    message.attributes
+                                    message.attributes,
+                                    message.messageGroupId,
+                                    message.messageDeduplicationId,
+                                    message.dlq
                                 );
                                 panel.webview.postMessage(sanitizeForWebview({
                                     command: 'messageSent',
