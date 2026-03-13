@@ -62,9 +62,10 @@ test.describe('Message Operations', () => {
         await page.waitForTimeout(2000);
 
         // Try to receive a message to delete it (retry due to SQS sampling)
+        // Use visibility timeout of 0 (peek mode) to avoid making messages invisible
         let receiptHandle: string | null = null;
         for (let i = 0; i < 3; i++) {
-            await messagePage.receiveMessages();
+            await messagePage.receiveMessages(10, 0);
             await messagePage.waitForMessagesToLoad();
             receiptHandle = await messagePage.getFirstMessageReceiptHandle();
             if (receiptHandle) break;

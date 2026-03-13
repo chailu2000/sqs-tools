@@ -22,9 +22,14 @@ export class MessagePage extends BasePage {
     /**
      * Receive messages from the selected queue
      */
-    async receiveMessages(maxMessages: number = 10) {
+    async receiveMessages(maxMessages: number = 10, visibilityTimeout: number = 30) {
         await this.page.waitForSelector(this.inputMaxMessages, { state: 'visible' });
         await this.fill(this.inputMaxMessages, maxMessages.toString());
+
+        // Set visibility timeout if different from default
+        const visibilityInput = this.page.locator(this.inputVisibilityTimeout);
+        await visibilityInput.fill(visibilityTimeout.toString());
+
         await this.click(this.btnReceiveMessages);
         await this.waitForLoadingToFinish();
     }
