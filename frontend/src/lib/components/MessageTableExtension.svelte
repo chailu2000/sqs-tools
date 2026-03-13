@@ -11,7 +11,7 @@
     let pageSize = $state(10);
     let maxMessages = $state(10);
     let visibilityTimeout = $state(0); // Default to 0 for extension (peek mode)
-    let waitTimeSeconds = $state(20); // Use max long polling by default
+    let waitTimeSeconds = $state(0); // Short polling by default for better UI responsiveness
     let peek = $state(true); // Enabled by default as it's the desired behavior for this tool
     let activeTab = $derived(store.activeTab);
     let polling = $state(false);
@@ -322,6 +322,7 @@
                     receiptHandle: m.receiptHandle,
                     body: m.body,
                     messageAttributes: m.messageAttributes,
+                    attributes: m.attributes,
                 }));
 
             console.log('[Webview] Calling api.redriveSelectedMessages with:', {

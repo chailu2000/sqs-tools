@@ -80,13 +80,11 @@ public class RedriveService {
                         messageDetails.getMessageAttributes());
 
                 // Extract FIFO attributes if present in system attributes
-                String messageGroupId = null;
-                String messageDeduplicationId = null;
 
-                if (messageDetails.getAttributes() != null) {
-                    messageGroupId = (String) messageDetails.getAttributes().get("MessageGroupId");
-                    messageDeduplicationId = (String) messageDetails.getAttributes().get("MessageDeduplicationId");
-                }
+                // Extract FIFO attributes if present in system attributes
+                String messageGroupId = extractAttribute(messageDetails.getAttributes(), "MessageGroupId");
+                String messageDeduplicationId = extractAttribute(messageDetails.getAttributes(),
+                        "MessageDeduplicationId");
 
                 // Send to main queue
                 messageService.sendMessage(mainQueueUrl, region, messageDetails.getBody(), attributes, null,
@@ -129,6 +127,33 @@ public class RedriveService {
             }
         }
         return converted;
+    }
+
+    private String extractAttribute(Map<String, Object> attributes, String key) {
+        if (attributes == null)
+            return null;
+
+        // Try exact match
+        Object value = attributes.get(key);
+        if (value != null)
+            return value.toString();
+
+        // Try case-insensitive or common variations
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(key)) {
+                return entry.getValue().toString();
+            }
+        }
+
+        // Try underscore version (MESSAGE_GROUP_ID)
+        String underscoreKey = key.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(underscoreKey)) {
+                return entry.getValue().toString();
+            }
+        }
+
+        return null;
     }
 
 }
