@@ -689,6 +689,9 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
 
         case 'sendMessage':
             try {
+                // Determine target queue URL based on dlq flag
+                const targetQueueUrl = message.dlq && queue.dlqUrl ? queue.dlqUrl : queue.url;
+
                 // Transform message attributes from frontend format to AWS SDK format
                 const messageAttributes: Record<string, any> = {};
                 if (message.attributes) {
@@ -701,7 +704,7 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
                     }
                 }
 
-                await sqsService.sendMessage(queue.url, message.body, {
+                await sqsService.sendMessage(targetQueueUrl, message.body, {
                     delaySeconds: message.delaySeconds || 0,
                     messageAttributes,
                     messageGroupId: message.messageGroupId,
