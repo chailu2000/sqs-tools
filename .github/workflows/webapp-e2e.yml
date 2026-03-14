@@ -43,6 +43,57 @@ jobs:
         run: pnpm exec playwright install --with-deps
 
       # -----------------------------------------------------------------------
+      # Start LocalStack (fake AWS)
+      # -----------------------------------------------------------------------
+      - name: Start LocalStack
+        run: |
+          docker run -d \
+            --name localstack \
+            -p 4566:4566 \
+            -e SERVICES=sqs,sts \
+            -e DEBUG=0 \
+            localstack/localstack:latest
+
+      - name: Wait for LocalStack
+        run: |
+          echo "Waiting for LocalStack to be ready..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4566/_localstack/health | grep -q '"sqs"'; then
+              echo "LocalStack is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30: not ready yet..."
+            sleep 2
+          done
+          echo "LocalStack failed to start"
+          docker logs localstack
+          exit 1
+
+      # -----------------------------------------------------------------------
+      # Create a fake AWS profile so the backend/tests can select "sqs-tool"
+      # -----------------------------------------------------------------------
+      - name: Configure fake AWS profile
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << 'EOF'
+          [default]
+          region = us-east-1
+
+          [profile sqs-tool]
+          region = us-east-1
+          EOF
+
+          cat > ~/.aws/credentials << 'EOF'
+          [default]
+          aws_access_key_id = test
+          aws_secret_access_key = test
+
+          [sqs-tool]
+          aws_access_key_id = test
+          aws_secret_access_key = test
+          EOF
+
+      # -----------------------------------------------------------------------
       # Build & start backend
       # -----------------------------------------------------------------------
       - name: Build backend
@@ -53,24 +104,17 @@ jobs:
         working-directory: backend
         run: rm -rf data && mkdir -p data
 
-      - name: Check for port conflicts
-        run: |
-          echo "Checking if port 8080 is already in use..."
-
-
       - name: Start backend
         working-directory: backend
         run: |
-          echo "Starting backend..."
-          # Ensure data directory is clean (already done in previous step but good to be sure)
-          mkdir -p data
-          nohup java -jar build/libs/*.jar --spring.profiles.active=test > backend.log 2>&1 &
+          nohup java -jar build/libs/*.jar > backend.log 2>&1 &
           echo $! > backend.pid
           echo "Backend started with PID $(cat backend.pid)"
         env:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
+          AWS_ENDPOINT_URL: http://localhost:4566
 
       - name: Wait for backend to be ready
         run: |
@@ -80,35 +124,29 @@ jobs:
               echo "Backend is ready!"
               exit 0
             fi
-            
-            # Print log snippet every 10 attempts to show progress or errors
             if [ $((i % 10)) -eq 0 ]; then
-                echo "--- Backend log snippet (Attempt $i) ---"
-                tail -n 20 backend/backend.log || echo "Log file not found at backend/backend.log"
-                echo "-----------------------------------------"
+              echo "--- Backend log snippet (Attempt $i) ---"
+              tail -n 20 backend/backend.log || true
+              echo "-----------------------------------------"
             fi
-
             echo "Attempt $i/60: Backend not ready yet..."
             sleep 2
           done
           echo "Backend failed to start within 120 seconds"
-          echo "--- FULL BACKEND LOG ---"
-          cat backend/backend.log || echo "No backend log found"
-          echo "--- END OF LOG ---"
+          cat backend/backend.log || true
           exit 1
 
       # -----------------------------------------------------------------------
-      # Run E2E tests (Chromium only in CI for speed; remove --project to run all)
+      # Run E2E tests
       # -----------------------------------------------------------------------
       - name: Run Playwright E2E tests
         working-directory: frontend
-        run: pnpm exec playwright test --reporter=list ${PLAYWRIGHT_ARGS}
+        run: pnpm exec playwright test --reporter=list
         env:
           CI: true
-          PLAYWRIGHT_ARGS: ${{ env.PLAYWRIGHT_ARGS }}
 
       # -----------------------------------------------------------------------
-      # Upload artifacts on failure (or always for the HTML report)
+      # Artifacts
       # -----------------------------------------------------------------------
       - name: Upload Playwright HTML report
         if: always()
@@ -125,3 +163,7 @@ jobs:
           name: test-results
           path: frontend/test-results/
           retention-days: 30
+
+      - name: Stop LocalStack
+        if: always()
+        run: docker stop localstack && docker rm localstack || true

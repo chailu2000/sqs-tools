@@ -1,13 +1,16 @@
 package com.sqstools.aws;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.StsClientBuilder;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Optional;
 
@@ -16,6 +19,9 @@ public class CredentialsProvider {
 
     private AwsCredentialsProvider credentialsProvider;
     private String activeProfile;
+
+    @Value("${aws.endpoint-url:}")
+    private String endpointUrl;
 
     public CredentialsProvider() {
         this.credentialsProvider = resolveCredentials();
@@ -68,14 +74,20 @@ public class CredentialsProvider {
     }
 
     public Optional<String> getAccountId() {
-        try (StsClient stsClient = StsClient.builder()
-                .credentialsProvider(credentialsProvider)
-                .region(Region.US_EAST_1)
-                .build()) {
+        try {
+            StsClientBuilder builder = StsClient.builder()
+                    .credentialsProvider(credentialsProvider)
+                    .region(Region.US_EAST_1);
 
-            GetCallerIdentityResponse response = stsClient.getCallerIdentity(
-                    GetCallerIdentityRequest.builder().build());
-            return Optional.of(response.account());
+            if (endpointUrl != null && !endpointUrl.isBlank()) {
+                builder.endpointOverride(URI.create(endpointUrl));
+            }
+
+            try (StsClient stsClient = builder.build()) {
+                GetCallerIdentityResponse response = stsClient.getCallerIdentity(
+                        GetCallerIdentityRequest.builder().build());
+                return Optional.of(response.account());
+            }
         } catch (Exception e) {
             return Optional.empty();
         }
