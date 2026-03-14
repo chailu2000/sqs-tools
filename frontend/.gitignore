@@ -12,9 +12,10 @@ node_modules
 dist
 dist-ssr
 *.local
-test-results
-playwright-report
-**/*snapshots/**
+# Test output
+test-results/
+playwright-report/
+**/*snapshots*/
 
 # Editor
 .vscode/*

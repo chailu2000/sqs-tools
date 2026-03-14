@@ -16,4 +16,5 @@ Thumbs.db
 
 # Application
 .sqs-tools/
-data/
+data/*
+!data/.gitkeep
