@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 import { QueuePage } from './pages/QueuePage';
 import { MessagePage } from './pages/MessagePage';
 
+// Skip visual regression tests in CI - snapshots are platform-specific (darwin vs linux)
+test.skip(!!process.env.PLAYWRIGHT_SKIP_VISUAL_REGRESSION, 'Visual regression skipped in CI (platform-specific snapshots)');
+
 // ---------------------------------------------------------------------------
 // Mock data
 // ---------------------------------------------------------------------------

@@ -77,7 +77,10 @@ jobs:
           aws --endpoint-url=http://localhost:4566 sqs create-queue \
             --queue-name test-queue-1 \
             --region us-east-1
-          echo "Created test-queue-1"
+          aws --endpoint-url=http://localhost:4566 sqs create-queue \
+            --queue-name test-queue-2 \
+            --region us-east-1
+          echo "Created test-queue-1 and test-queue-2"
         env:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
@@ -151,13 +154,14 @@ jobs:
           exit 1
 
       # -----------------------------------------------------------------------
-      # Run E2E tests
+      # Run E2E tests (skip visual regression in CI - snapshots are platform-specific)
       # -----------------------------------------------------------------------
       - name: Run Playwright E2E tests
         working-directory: frontend
-        run: pnpm exec playwright test --reporter=list --update-snapshots=missing
+        run: pnpm exec playwright test --reporter=list --ignore-snapshots
         env:
           CI: true
+          PLAYWRIGHT_SKIP_VISUAL_REGRESSION: true
 
       # -----------------------------------------------------------------------
       # Artifacts
