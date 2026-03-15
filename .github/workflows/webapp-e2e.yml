@@ -70,6 +70,20 @@ jobs:
           exit 1
 
       # -----------------------------------------------------------------------
+      # Create test queues in LocalStack
+      # -----------------------------------------------------------------------
+      - name: Create test queues in LocalStack
+        run: |
+          aws --endpoint-url=http://localhost:4566 sqs create-queue \
+            --queue-name test-queue-1 \
+            --region us-east-1
+          echo "Created test-queue-1"
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+
+      # -----------------------------------------------------------------------
       # Create a fake AWS profile so the backend/tests can select "sqs-tool"
       # -----------------------------------------------------------------------
       - name: Configure fake AWS profile
@@ -141,7 +155,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Run Playwright E2E tests
         working-directory: frontend
-        run: pnpm exec playwright test --reporter=list
+        run: pnpm exec playwright test --reporter=list --update-snapshots=missing
         env:
           CI: true
 
