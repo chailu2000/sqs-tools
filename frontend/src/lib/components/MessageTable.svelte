@@ -94,17 +94,11 @@
     async function pollForMessages() {
         if (!store.selectedQueue) return;
 
-        console.log("=== POLL STARTED ===");
-        console.log("Queue:", store.selectedQueue.queueName);
-        console.log("Active tab:", activeTab);
-
         try {
             polling = true;
             error = null;
             pollCount = 0;
             pollProgress = 0;
-
-            console.log("Polling state set to true");
 
             // Clear existing messages
             if (activeTab === "main") {
@@ -118,10 +112,6 @@
             const startTime = Date.now();
             const maxDuration = pollDuration * 1000; // Convert to milliseconds
 
-            console.log(
-                `Will poll for ${pollDuration} seconds (${maxDuration}ms)`,
-            );
-
             // Progress update interval
             const progressInterval = setInterval(() => {
                 const elapsed = Date.now() - startTime;
@@ -130,18 +120,15 @@
                     100,
                 );
                 pollProgress = newProgress;
-                console.log(`Progress update: ${Math.round(newProgress)}%`);
             }, 1000); // Update every second
 
             // Loop for the specified duration or until stopped
             while (polling && Date.now() - startTime < maxDuration) {
                 pollCount++;
-                console.log(`\n--- Poll iteration ${pollCount} ---`);
 
                 let batch: Message[];
 
                 if (activeTab === "main") {
-                    console.log("Calling receiveMessages...");
                     batch = await api.receiveMessages(store.selectedQueue.id, {
                         maxMessages: 10,
                         visibilityTimeout,
@@ -154,7 +141,6 @@
                         clearInterval(progressInterval);
                         return;
                     }
-                    console.log("Calling receiveDlqMessages...");
                     batch = await api.receiveDlqMessages(
                         store.selectedQueue.id,
                         {
@@ -165,42 +151,24 @@
                     );
                 }
 
-                console.log(`Received ${batch.length} messages from API`);
-
                 if (batch.length > 0) {
                     // Deduplicate messages by messageId
                     const newMessages = batch.filter((msg) => {
                         if (seenMessageIds.has(msg.messageId)) {
-                            console.log(`  Duplicate: ${msg.messageId}`);
                             return false;
                         }
                         seenMessageIds.add(msg.messageId);
                         return true;
                     });
 
-                    console.log(
-                        `After dedup: ${newMessages.length} new messages`,
-                    );
-
                     if (newMessages.length > 0) {
                         allMessages = [...allMessages, ...newMessages];
-
-                        console.log(
-                            `Total accumulated: ${allMessages.length} messages`,
-                        );
-                        console.log("Updating store...");
 
                         // Update store with accumulated messages in real-time
                         if (activeTab === "main") {
                             store.setMessages(allMessages);
-                            console.log(
-                                `Store now has ${store.messages.length} messages`,
-                            );
                         } else {
                             store.setDlqMessages(allMessages);
-                            console.log(
-                                `Store now has ${store.dlqMessages.length} DLQ messages`,
-                            );
                         }
                     }
                 }
@@ -212,21 +180,16 @@
             clearInterval(progressInterval);
             pollProgress = 100;
 
-            console.log(`\n=== POLL COMPLETE ===`);
-            console.log(`Total messages found: ${allMessages.length}`);
-
             if (allMessages.length === 0) {
                 error = "No messages found in the queue";
             }
         } catch (err) {
-            console.error("=== POLL ERROR ===", err);
             error =
                 err instanceof Error ? err.message : "Failed to poll messages";
         } finally {
             polling = false;
             pollCount = 0;
             pollProgress = 0;
-            console.log("=== POLL STOPPED ===");
         }
     }
 

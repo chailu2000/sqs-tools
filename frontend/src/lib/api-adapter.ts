@@ -22,6 +22,9 @@ export interface Message {
         ApproximateReceiveCount?: string;
         ApproximateFirstReceiveTimestamp?: string;
         SenderId?: string;
+        MessageGroupId?: string;
+        MessageDeduplicationId?: string;
+        [key: string]: string | undefined;
     };
     messageAttributes?: {
         [key: string]: {
@@ -130,13 +133,14 @@ export const api = {
     /**
      * Delete a single message
      */
-    async deleteMessage(queueId: string, receiptHandle: string): Promise<void> {
+    async deleteMessage(queueId: string, receiptHandle: string, dlq: boolean = false): Promise<void> {
         const promise = waitForMessage<{ success: boolean }>('messageDeleted');
 
         vscode.postMessage({
             command: 'deleteMessage',
             queueId,
-            receiptHandle
+            receiptHandle,
+            dlq
         });
 
         await promise;
@@ -154,23 +158,16 @@ export const api = {
             messageAttributes?: any;
         }>
     ): Promise<RedriveResult> {
-        console.log('[API Adapter] redriveSelectedMessages called with:', { queueId, messageCount: messages.length });
-
         const promise = waitForMessage<RedriveResult>('redriveResult');
 
         // Serialize messages to ensure they can be cloned by postMessage
-        // The structured clone algorithm used by postMessage can't handle certain objects
         const serializedMessages = JSON.parse(JSON.stringify(messages));
 
-        const messagePayload = {
+        vscode.postMessage({
             command: 'redriveSelectedMessages',
             queueId,
             messages: serializedMessages
-        };
-
-        console.log('[API Adapter] Sending postMessage with', serializedMessages.length, 'messages');
-        vscode.postMessage(messagePayload);
-        console.log('[API Adapter] postMessage sent successfully');
+        });
 
         return await promise;
     },
@@ -188,7 +185,6 @@ export const api = {
         dlq: boolean = false
     ): Promise<void> {
         const promise = waitForMessage<{ success: boolean }>('messageSent');
-        console.log('[API Adapter] sendMessage called with dlq:', dlq);
 
         vscode.postMessage({
             command: 'sendMessage',
@@ -222,8 +218,6 @@ export const api = {
      * Get queue configuration (not needed for extension, queue is passed via context)
      */
     async getQueueConfiguration(queueId: string): Promise<QueueConfiguration> {
-        // In extension context, queue config is provided by the extension
-        // This is a no-op for compatibility
         throw new Error('getQueueConfiguration not supported in extension context');
     }
 };

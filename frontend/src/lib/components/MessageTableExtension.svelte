@@ -230,6 +230,7 @@
                 await api.deleteMessage(
                     store.selectedQueue.id,
                     msg.receiptHandle,
+                    activeTab === 'dlq',
                 );
                 if (activeTab === "main") {
                     store.removeMessage(msg.receiptHandle);
@@ -262,6 +263,7 @@
             await api.deleteMessage(
                 store.selectedQueue.id,
                 confirmDeleteSingle,
+                activeTab === 'dlq',
             );
             if (activeTab === "main") {
                 store.removeMessage(confirmDeleteSingle);
@@ -285,28 +287,12 @@
     }
 
     async function redriveSelected() {
-        console.log('[Webview] redriveSelected called');
-        console.log('[Webview] selectedQueue:', store.selectedQueue);
-        console.log('[Webview] selectedMessageIds.size:', store.selectedMessageIds.size);
-        
-        if (!store.selectedQueue || store.selectedMessageIds.size === 0) {
-            console.log('[Webview] Aborting: no queue or no messages selected');
-            return;
-        }
-        
-        console.log('[Webview] Setting confirmRedrive = true');
+        if (!store.selectedQueue || store.selectedMessageIds.size === 0) return;
         confirmRedrive = true;
     }
 
     async function confirmRedriveSelected() {
-        console.log('[Webview] confirmRedriveSelected called');
-        console.log('[Webview] selectedQueue:', store.selectedQueue);
-        console.log('[Webview] selectedMessageIds:', Array.from(store.selectedMessageIds));
-        
-        if (!store.selectedQueue || store.selectedMessageIds.size === 0) {
-            console.log('[Webview] Aborting: no queue or no messages selected');
-            return;
-        }
+        if (!store.selectedQueue || store.selectedMessageIds.size === 0) return;
 
         try {
             loading = true;
@@ -325,17 +311,10 @@
                     attributes: m.attributes,
                 }));
 
-            console.log('[Webview] Calling api.redriveSelectedMessages with:', {
-                queueId: store.selectedQueue.id,
-                messageCount: selectedMessages.length
-            });
-
             const result = await api.redriveSelectedMessages(
                 store.selectedQueue.id,
                 selectedMessages,
             );
-
-            console.log('[Webview] Redrive result:', result);
 
             // Handle the detailed response
             if (result.successCount === 0 && result.failureCount > 0) {

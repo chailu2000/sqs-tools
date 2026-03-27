@@ -672,7 +672,10 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
 
         case 'deleteMessage':
             try {
-                await sqsService.deleteMessage(queue.url, message.receiptHandle);
+                // Determine target queue URL based on which tab the message came from
+                // The receiptHandle is queue-specific, so we need to delete from the right queue
+                const deleteQueueUrl = message.dlq && queue.dlqUrl ? queue.dlqUrl : queue.url;
+                await sqsService.deleteMessage(deleteQueueUrl, message.receiptHandle);
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'messageDeleted',
                     success: true

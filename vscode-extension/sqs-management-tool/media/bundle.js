@@ -3933,12 +3933,13 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     /**
      * Delete a single message
      */
-    async deleteMessage(queueId, receiptHandle) {
+    async deleteMessage(queueId, receiptHandle, dlq = false) {
       const promise = waitForMessage("messageDeleted");
       vscode.postMessage({
         command: "deleteMessage",
         queueId,
-        receiptHandle
+        receiptHandle,
+        dlq
       });
       await promise;
     },
@@ -3946,17 +3947,13 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
      * Redrive selected messages from DLQ to main queue
      */
     async redriveSelectedMessages(queueId, messages) {
-      console.log("[API Adapter] redriveSelectedMessages called with:", { queueId, messageCount: messages.length });
       const promise = waitForMessage("redriveResult");
       const serializedMessages = JSON.parse(JSON.stringify(messages));
-      const messagePayload = {
+      vscode.postMessage({
         command: "redriveSelectedMessages",
         queueId,
         messages: serializedMessages
-      };
-      console.log("[API Adapter] Sending postMessage with", serializedMessages.length, "messages");
-      vscode.postMessage(messagePayload);
-      console.log("[API Adapter] postMessage sent successfully");
+      });
       return await promise;
     },
     /**
@@ -3964,7 +3961,6 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
      */
     async sendMessage(queueId, body, attributes, delaySeconds, messageGroupId, messageDeduplicationId, dlq = false) {
       const promise = waitForMessage("messageSent");
-      console.log("[API Adapter] sendMessage called with dlq:", dlq);
       vscode.postMessage({
         command: "sendMessage",
         queueId,
@@ -4750,7 +4746,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       const toDelete = messages.filter((m) => store.selectedMessageIds.has(m.messageId));
       for (const msg of toDelete) {
         try {
-          await api.deleteMessage(store.selectedQueue.id, msg.receiptHandle);
+          await api.deleteMessage(store.selectedQueue.id, msg.receiptHandle, get(activeTab) === "dlq");
           if (get(activeTab) === "main") {
             store.removeMessage(msg.receiptHandle);
           } else {
@@ -4768,7 +4764,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     async function confirmDeleteSingleMessage() {
       if (!store.selectedQueue || !get(confirmDeleteSingle)) return;
       try {
-        await api.deleteMessage(store.selectedQueue.id, get(confirmDeleteSingle));
+        await api.deleteMessage(store.selectedQueue.id, get(confirmDeleteSingle), get(activeTab) === "dlq");
         if (get(activeTab) === "main") {
           store.removeMessage(get(confirmDeleteSingle));
         } else {
@@ -4785,24 +4781,11 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       set(confirmDelete, false);
     }
     async function redriveSelected() {
-      console.log("[Webview] redriveSelected called");
-      console.log("[Webview] selectedQueue:", store.selectedQueue);
-      console.log("[Webview] selectedMessageIds.size:", store.selectedMessageIds.size);
-      if (!store.selectedQueue || store.selectedMessageIds.size === 0) {
-        console.log("[Webview] Aborting: no queue or no messages selected");
-        return;
-      }
-      console.log("[Webview] Setting confirmRedrive = true");
+      if (!store.selectedQueue || store.selectedMessageIds.size === 0) return;
       set(confirmRedrive, true);
     }
     async function confirmRedriveSelected() {
-      console.log("[Webview] confirmRedriveSelected called");
-      console.log("[Webview] selectedQueue:", store.selectedQueue);
-      console.log("[Webview] selectedMessageIds:", Array.from(store.selectedMessageIds));
-      if (!store.selectedQueue || store.selectedMessageIds.size === 0) {
-        console.log("[Webview] Aborting: no queue or no messages selected");
-        return;
-      }
+      if (!store.selectedQueue || store.selectedMessageIds.size === 0) return;
       try {
         set(loading, true);
         set(error, null);
@@ -4815,12 +4798,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
           messageAttributes: m.messageAttributes,
           attributes: m.attributes
         }));
-        console.log("[Webview] Calling api.redriveSelectedMessages with:", {
-          queueId: store.selectedQueue.id,
-          messageCount: selectedMessages.length
-        });
         const result = await api.redriveSelectedMessages(store.selectedQueue.id, selectedMessages);
-        console.log("[Webview] Redrive result:", result);
         if (result.successCount === 0 && result.failureCount > 0) {
           set(error, `Failed to redrive all ${result.failureCount} message(s). ${result.failed.map((f) => `${f.messageId}: ${f.error}`).join("; ")}`);
         } else if (result.failureCount === 0) {
