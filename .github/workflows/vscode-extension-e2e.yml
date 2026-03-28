@@ -53,6 +53,8 @@ jobs:
       - name: Start LocalStack
         working-directory: vscode-extension/sqs-management-tool
         run: docker compose -f tests/e2e/config/docker-compose.localstack.yml up -d
+        env:
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
       
       - name: Wait for LocalStack health check
         working-directory: vscode-extension/sqs-management-tool
