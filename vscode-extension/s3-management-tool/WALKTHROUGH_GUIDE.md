@@ -168,12 +168,12 @@ s3-management-tool/
 
 2. **Install dependencies:**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Compile TypeScript:**
    ```bash
-   npm run compile
+   pnpm run compile
    ```
 
 ### Option 2: From VSIX Package
@@ -202,13 +202,13 @@ Once published to VS Code Marketplace or OpenVSX:
 
 ```bash
 cd vscode-extension/s3-management-tool
-npm install
+pnpm install
 ```
 
 ### 2. Compile TypeScript
 
 ```bash
-npm run compile
+pnpm run compile
 ```
 
 This compiles all TypeScript files to the `out/` directory.
@@ -218,7 +218,7 @@ This compiles all TypeScript files to the `out/` directory.
 For development, run the TypeScript compiler in watch mode:
 
 ```bash
-npm run watch
+pnpm run watch
 ```
 
 This automatically recompiles on file changes.
@@ -253,7 +253,7 @@ code .
 
 ```bash
 # Package the extension
-npm run package
+pnpm run package
 
 # This creates a .vsix file that can be installed
 ```
@@ -471,21 +471,21 @@ Dry Run: Yes - Preview only
 Run all unit tests:
 
 ```bash
-npm test
+pnpm test
 ```
 
 Run specific test suite:
 
 ```bash
-npm test -- sync-service
-npm test -- validation
-npm test -- credential-provider
+pnpm test -- sync-service
+pnpm test -- validation
+pnpm test -- credential-provider
 ```
 
 Run tests in watch mode (auto-rerun on changes):
 
 ```bash
-npm test -- --watch
+pnpm test -- --watch
 ```
 
 **Expected output:**
@@ -496,12 +496,12 @@ Tests:       164 passed, 9 skipped, 173 total
 
 ### Property-Based Tests
 
-Property tests use **fast-check** to verify universal correctness across randomized inputs. They run automatically with `npm test`.
+Property tests use **fast-check** to verify universal correctness across randomized inputs. They run automatically with `pnpm test`.
 
 Run only property tests:
 
 ```bash
-npm test -- property
+pnpm test -- property
 ```
 
 **Properties tested:**
@@ -554,7 +554,7 @@ curl http://localhost:4566/_localstack/health
 #### Step 2: Compile E2E Tests
 
 ```bash
-npm run compile:e2e
+pnpm run compile:e2e
 ```
 
 #### Step 3: Run E2E Tests
@@ -562,22 +562,22 @@ npm run compile:e2e
 Run all E2E tests:
 
 ```bash
-npm run test:e2e
+pnpm run test:e2e
 ```
 
 Run specific E2E test:
 
 ```bash
-npm run test:e2e -- --testNamePattern="Full Sync Round-Trip"
-npm run test:e2e -- --testNamePattern="Incremental Sync"
-npm run test:e2e -- --testNamePattern="Prefix Enforcement"
-npm run test:e2e -- --testNamePattern="Watch Mode"
+pnpm run test:e2e -- --testNamePattern="Full Sync Round-Trip"
+pnpm run test:e2e -- --testNamePattern="Incremental Sync"
+pnpm run test:e2e -- --testNamePattern="Prefix Enforcement"
+pnpm run test:e2e -- --testNamePattern="Watch Mode"
 ```
 
 Run E2E tests in CI mode:
 
 ```bash
-npm run test:e2e:ci
+pnpm run test:e2e:ci
 ```
 
 **E2E Test Suites:**
@@ -798,13 +798,13 @@ When adding the bucket, use **Add Bucket with Prefix** and enter `team-data/` as
 
 ### TypeScript Compilation Errors
 
-**Symptom:** `npm run compile` fails with TypeScript errors.
+**Symptom:** `pnpm run compile` fails with TypeScript errors.
 
 **Solutions:**
 ```bash
 # Clean and recompile
 rm -rf out/
-npm run compile
+pnpm run compile
 
 # Check for type errors without emitting
 npx tsc --noEmit
@@ -817,13 +817,13 @@ npx tsc --noEmit
 **Solutions:**
 ```bash
 # Run tests with verbose output
-npm test -- --verbose
+pnpm test -- --verbose
 
 # Run specific failing test
-npm test -- sync-service
+pnpm test -- sync-service
 
 # Clear Jest cache
-npm test -- --clearCache
+pnpm test -- --clearCache
 ```
 
 ---
@@ -832,16 +832,16 @@ npm test -- --clearCache
 
 | Command | Description |
 |---------|-------------|
-| `npm install` | Install dependencies |
-| `npm run compile` | Compile TypeScript |
-| `npm run compile:e2e` | Compile E2E tests |
-| `npm run watch` | Watch mode (auto-compile on changes) |
-| `npm test` | Run all unit tests |
-| `npm test:unit` | Run unit tests only |
-| `npm run test:e2e` | Run E2E tests (requires LocalStack) |
-| `npm run test:e2e:ci` | Run E2E tests in CI mode |
-| `npm run bundle` | Bundle extension with esbuild |
-| `npm run package` | Package as .vsix file |
+| `pnpm install` | Install dependencies |
+| `pnpm run compile` | Compile TypeScript |
+| `pnpm run compile:e2e` | Compile E2E tests |
+| `pnpm run watch` | Watch mode (auto-compile on changes) |
+| `pnpm test` | Run all unit tests |
+| `pnpm test:unit` | Run unit tests only |
+| `pnpm run test:e2e` | Run E2E tests (requires LocalStack) |
+| `pnpm run test:e2e:ci` | Run E2E tests in CI mode |
+| `pnpm run bundle` | Bundle extension with esbuild |
+| `pnpm run package` | Package as .vsix file |
 
 ---
 
@@ -912,7 +912,7 @@ npm test -- --clearCache
 
 ```bash
 # 1. Build your website
-npm run build
+pnpm run build
 
 # 2. In VS Code:
 #    - Run: S3: Create Sync Profile

@@ -31,9 +31,7 @@ playwright-report/
 .vsce
 
 # Package lock files (project uses pnpm)
-package-lock.json
 **/package-lock.json
-# pnpm-lock.yaml
 
 # AI assistant settings (optional - uncomment if you prefer not to track them)
 .qwen/
