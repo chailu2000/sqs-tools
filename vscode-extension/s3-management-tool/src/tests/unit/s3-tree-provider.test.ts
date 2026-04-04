@@ -135,6 +135,13 @@ describe('S3BucketItem', () => {
         expect(item.description).toBe('eu-west-1');
         expect((item.iconPath as { id: string }).id).toBe('database');
     });
+
+    it('shows prefix in description when bucket has a prefix scope', () => {
+        const config = makeBucketConfig({ name: 'test-bucket', region: 'us-east-1', prefix: 'team-data/' });
+        const item = new S3BucketItem(config);
+        expect(item.description).toBe('us-east-1 · prefix: team-data/');
+        expect(item.tooltip).toContain('Scoped to prefix: team-data/');
+    });
 });
 
 describe('S3PrefixItem', () => {
@@ -291,6 +298,33 @@ describe('S3TreeProvider — AccessDenied renders error node', () => {
         expect(children).toHaveLength(1);
         expect(children[0]).toBeInstanceOf(S3ErrorItem);
         expect((children[0] as S3ErrorItem).label).toContain('Access denied');
+    });
+});
+
+describe('S3TreeProvider — zero-byte folder objects are hidden', () => {
+    it('renders CommonPrefixes as folders and filtered objects as files', async () => {
+        // The S3Service already filters out zero-byte folder objects.
+        // The tree provider just renders whatever listObjects returns.
+        const config = makeBucketConfig({ name: 'my-bucket', region: 'us-east-1' });
+        const listObjects = jest.fn().mockResolvedValue({
+            // After S3Service filtering: no zero-byte "/" keys
+            objects: [
+                { key: 'logs/app.log', size: 512, lastModified: new Date('2024-01-01'), etag: '"abc"' },
+            ],
+            commonPrefixes: ['logs/'],
+            isTruncated: false,
+        });
+
+        const provider = new S3TreeProvider(makeStorage([config]), makeS3Service(listObjects));
+        const bucketItem = new S3BucketItem(config);
+        const children = await provider.getChildren(bucketItem);
+
+        // 2 items: the folder (from CommonPrefixes) and the file
+        expect(children).toHaveLength(2);
+        expect(children[0]).toBeInstanceOf(S3PrefixItem);
+        expect(children[0].label).toBe('logs');
+        expect(children[1]).toBeInstanceOf(S3ObjectItem);
+        expect(children[1].label).toBe('app.log');
     });
 });
 

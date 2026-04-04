@@ -26,10 +26,25 @@ export class S3BucketItem extends vscode.TreeItem {
 
     constructor(public readonly config: BucketConfig) {
         super(config.name, vscode.TreeItemCollapsibleState.Collapsed);
-        this.description = config.region;
+        this.description = buildBucketDescription(config);
         this.iconPath = new vscode.ThemeIcon('database');
-        this.tooltip = `${config.name} (${config.region})`;
+        this.tooltip = buildBucketTooltip(config);
     }
+}
+
+function buildBucketDescription(config: BucketConfig): string {
+    if (config.prefix) {
+        return `${config.region} · prefix: ${config.prefix}`;
+    }
+    return config.region;
+}
+
+function buildBucketTooltip(config: BucketConfig): string {
+    let tooltip = `${config.name} (${config.region})`;
+    if (config.prefix) {
+        tooltip += `\nScoped to prefix: ${config.prefix}`;
+    }
+    return tooltip;
 }
 
 export class S3PrefixItem extends vscode.TreeItem {
