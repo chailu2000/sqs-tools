@@ -67,11 +67,14 @@ export async function addBucketByArn(
         return;
     }
 
+    // Auto-detect the actual bucket region
+    const actualRegion = await s3Service.getBucketRegion(bucketName);
+
     const now = new Date().toISOString();
     await storage.addBucket({
         id: generateId(),
         name: bucketName,
-        region: effectiveRegion,
+        region: actualRegion,
         addedManually: true,
         createdAt: now,
         updatedAt: now,

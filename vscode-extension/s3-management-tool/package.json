@@ -23,7 +23,8 @@
             },
             {
                 "command": "s3-management-tool.addBucketWithPrefix",
-                "title": "Add Bucket with Prefix"
+                "title": "Add Bucket with Prefix",
+                "icon": "$(new-folder)"
             },
             {
                 "command": "s3-management-tool.removeBucket",
@@ -131,6 +132,11 @@
                 },
                 {
                     "command": "s3-management-tool.addBucketByName",
+                    "when": "view == s3ManagementBuckets",
+                    "group": "navigation"
+                },
+                {
+                    "command": "s3-management-tool.addBucketWithPrefix",
                     "when": "view == s3ManagementBuckets",
                     "group": "navigation"
                 },

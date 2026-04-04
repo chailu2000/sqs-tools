@@ -58,9 +58,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Initialize sync service
     syncService = new SyncService(s3Service);
 
-    // Initialize tree provider
+    // Initialize tree provider — register IMMEDIATELY so tree renders right away
     treeProvider = new S3TreeProvider(bucketStorage, s3Service);
-    vscode.window.registerTreeDataProvider('s3ManagementBuckets', treeProvider);
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('s3ManagementBuckets', treeProvider),
+    );
 
     // Initialize object details panel
     objectDetailsPanel = new ObjectDetailsPanel(
@@ -80,14 +82,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     watchModeStatusBarItem.tooltip = 'Stop S3 Watch Mode';
     context.subscriptions.push(watchModeStatusBarItem);
 
-    // Update status bar
-    await updateAwsProfileStatusBarItem();
-
-    // Register all commands
+    // Register all commands — done BEFORE async work so commands are available immediately
     registerCommands(context);
 
-    // Run auto-discovery on activation
-    await runAutoDiscovery();
+    // Fire-and-forget: load credentials in background (don't block activation)
+    loadDefaultCredentials().catch(err => {
+        log(`Background credential load failed: ${err instanceof Error ? err.message : String(err)}`);
+    });
+
+    // Fire-and-forget: run auto-discovery in background (don't block activation)
+    runAutoDiscovery().catch(err => {
+        log(`Background auto-discovery failed: ${err instanceof Error ? err.message : String(err)}`);
+    });
 }
 
 export function deactivate(): void {
@@ -356,6 +362,52 @@ async function runAutoDiscovery(): Promise<void> {
 // ---------------------------------------------------------------------------
 // Status Bar Updates
 // ---------------------------------------------------------------------------
+
+/**
+ * Attempt to load credentials from the default chain on extension activation.
+ * Tries the default profile first, then falls back gracefully if none exist.
+ */
+async function loadDefaultCredentials(): Promise<void> {
+    try {
+        // Try the default profile from ~/.aws/credentials
+        const profiles = await credentialProvider.listProfiles();
+        if (profiles.length > 0) {
+            // Use the first available profile (usually 'default')
+            const defaultProfile = profiles.includes('default') ? 'default' : profiles[0];
+            const creds = await credentialProvider.getCredentials(defaultProfile);
+            clientFactory.updateCredentials(creds);
+            log(`Loaded credentials from profile: ${creds.profile ?? defaultProfile}`);
+            await updateAwsProfileStatusBarItem();
+            return;
+        }
+
+        // Check VS Code SecretStorage
+        try {
+            const storedCreds = await credentialProvider.getCredentials();
+            if (storedCreds) {
+                clientFactory.updateCredentials(storedCreds);
+                log('Loaded credentials from VS Code SecretStorage');
+                await updateAwsProfileStatusBarItem();
+                return;
+            }
+        } catch {
+            // No stored credentials in SecretStorage
+        }
+
+        // Check environment variables
+        if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+            const creds = await credentialProvider.getCredentials();
+            if (creds) {
+                clientFactory.updateCredentials(creds);
+                log('Loaded credentials from environment variables');
+                await updateAwsProfileStatusBarItem();
+            }
+        }
+    } catch {
+        // No credentials available yet — user can select a profile manually
+        log('No default credentials found; user can select a profile manually');
+    }
+}
 
 async function updateAwsProfileStatusBarItem(): Promise<void> {
     try {
