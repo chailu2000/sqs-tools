@@ -35,7 +35,7 @@ playwright-report/
 
 # AI assistant settings (optional - uncomment if you prefer not to track them)
 .qwen/
-.kiro/**/*.config.kiro
+.kiro/
 
 # S3 Tool planning document (optional - can be committed or ignored)
 vscode-extension/sqs-management-tool/S3_TOOL_PLAN.md
