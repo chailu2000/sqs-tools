@@ -107,6 +107,31 @@
             {
                 "command": "s3-management-tool.viewSyncResults",
                 "title": "S3: View Sync Results"
+            },
+            {
+                "command": "s3-management-tool.createFolder",
+                "title": "Create Folder",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "s3-management-tool.copyS3Uri",
+                "title": "Copy S3 URI",
+                "icon": "$(clippy)"
+            },
+            {
+                "command": "s3-management-tool.bucketInfo",
+                "title": "Bucket Info",
+                "icon": "$(info)"
+            },
+            {
+                "command": "s3-management-tool.previewObject",
+                "title": "Preview Content",
+                "icon": "$(preview)"
+            },
+            {
+                "command": "s3-management-tool.downloadFolder",
+                "title": "Download Folder",
+                "icon": "$(cloud-download)"
             }
         ],
         "views": {
@@ -168,34 +193,69 @@
                     "group": "inline"
                 },
                 {
-                    "command": "s3-management-tool.downloadObject",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "command": "s3-management-tool.bucketInfo",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Bucket",
+                    "group": "bucket@1"
+                },
+                {
+                    "command": "s3-management-tool.createFolder",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Bucket",
+                    "group": "1_object@0"
+                },
+                {
+                    "command": "s3-management-tool.createFolder",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
+                    "group": "1_object@0"
+                },
+                {
+                    "command": "s3-management-tool.downloadFolder",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
                     "group": "1_object@1"
                 },
                 {
                     "command": "s3-management-tool.uploadObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
+                    "group": "1_object@2"
+                },
+                {
+                    "command": "s3-management-tool.copyS3Uri",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
+                    "group": "1_object@3"
+                },
+                {
+                    "command": "s3-management-tool.downloadObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@1"
                 },
                 {
-                    "command": "s3-management-tool.deleteObject",
+                    "command": "s3-management-tool.previewObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@2"
                 },
                 {
-                    "command": "s3-management-tool.copyObject",
+                    "command": "s3-management-tool.deleteObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@3"
                 },
                 {
-                    "command": "s3-management-tool.viewMetadata",
+                    "command": "s3-management-tool.copyObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@4"
                 },
                 {
-                    "command": "s3-management-tool.generatePresignedUrl",
+                    "command": "s3-management-tool.viewMetadata",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@5"
+                },
+                {
+                    "command": "s3-management-tool.copyS3Uri",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@6"
+                },
+                {
+                    "command": "s3-management-tool.generatePresignedUrl",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@7"
                 }
             ]
         }

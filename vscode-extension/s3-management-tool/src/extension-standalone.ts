@@ -13,7 +13,7 @@ import { S3Service } from './services/s3-service';
 import { CredentialProvider } from './services/credential-provider';
 import { BucketStorage } from './services/bucket-storage';
 import { SyncService } from './services/sync-service';
-import { S3TreeProvider, S3ObjectItem } from './views/s3-tree-provider';
+import { S3TreeProvider, S3BucketItem, S3ObjectItem, S3PrefixItem } from './views/s3-tree-provider';
 import { ObjectDetailsPanel } from './views/object-details-panel';
 import { BucketConfig, ObjectMetadata } from './models/s3-models';
 import { sanitizeForWebview } from './utils/webview-sanitizer';
@@ -264,6 +264,43 @@ function registerCommands(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('s3-management-tool.viewSyncResults', async () => {
             const { viewSyncResults } = await import('./commands/view-sync-results');
             await viewSyncResults();
+        }),
+    );
+
+    // --- New feature commands (#1-5) ---
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.createFolder', async (item) => {
+            const { createFolder } = await import('./commands/create-folder');
+            await createFolder(item, s3Service, treeProvider);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.copyS3Uri', async (item) => {
+            const { copyS3Uri } = await import('./commands/copy-s3-uri');
+            await copyS3Uri(item as S3ObjectItem | S3PrefixItem);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.bucketInfo', async (item: S3BucketItem) => {
+            const { bucketInfo } = await import('./commands/bucket-info');
+            await bucketInfo(item, s3Service);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.previewObject', async (item: S3ObjectItem) => {
+            const { previewObject } = await import('./commands/preview-object');
+            await previewObject(item, s3Service);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.downloadFolder', async (item: S3PrefixItem) => {
+            const { downloadFolder } = await import('./commands/download-folder');
+            await downloadFolder(item, s3Service);
         }),
     );
 }
