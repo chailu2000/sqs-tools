@@ -258,6 +258,28 @@ describe('S3Service prefix scope enforcement', () => {
         expect(page.commonPrefixes).toEqual([]);
         expect(page.isTruncated).toBe(false);
     });
+
+    it('listObjects filters out zero-byte folder placeholder objects (key ends with "/")', async () => {
+        const send = jest.fn().mockResolvedValue({
+            Contents: [
+                // Zero-byte folder placeholder — should be filtered out
+                { Key: 'logs/', Size: 0, LastModified: new Date(), ETag: '"d41d8cd98f00b204e9800998ecf8427e"' },
+                // Real file — should be kept
+                { Key: 'logs/app.log', Size: 512, LastModified: new Date(), ETag: '"abc"' },
+                // Zero-byte real file (should be kept — key doesn't end with /)
+                { Key: 'empty.txt', Size: 0, LastModified: new Date(), ETag: '"d41d8cd98f00b204e9800998ecf8427e"' },
+            ],
+            CommonPrefixes: [{ Prefix: 'logs/' }],
+            IsTruncated: false,
+        });
+
+        const service = new S3Service(makeFactory(send));
+        const page = await service.listObjects('my-bucket', '', 'us-east-1');
+
+        expect(page.objects).toHaveLength(2);
+        expect(page.objects.map(o => o.key)).toEqual(['logs/app.log', 'empty.txt']);
+        expect(page.commonPrefixes).toEqual(['logs/']);
+    });
 });
 
 // ---------------------------------------------------------------------------

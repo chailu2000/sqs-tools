@@ -226,6 +226,10 @@ export class S3Service {
             const objects: ObjectSummary[] = (response.Contents ?? [])
                 .filter(obj => {
                     const key = obj.Key ?? '';
+                    // Filter out zero-byte folder placeholder objects (they are already
+                    // represented as CommonPrefixes). S3 returns these when a prefix
+                    // is explicitly created via PutObject with an empty body.
+                    if ((obj.Size ?? 0) === 0 && key.endsWith('/')) { return false; }
                     return !configuredPrefix || key.startsWith(configuredPrefix);
                 })
                 .map(obj => ({
