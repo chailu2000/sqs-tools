@@ -15,6 +15,7 @@ import { BucketStorage } from './services/bucket-storage';
 import { SyncService } from './services/sync-service';
 import { S3TreeProvider, S3BucketItem, S3ObjectItem, S3PrefixItem } from './views/s3-tree-provider';
 import { ObjectDetailsPanel } from './views/object-details-panel';
+import { VersionsPanel } from './webviews/versions-panel';
 import { BucketConfig, ObjectMetadata } from './models/s3-models';
 import { sanitizeForWebview } from './utils/webview-sanitizer';
 import { viewMetadata } from './commands/view-metadata';
@@ -60,9 +61,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Initialize tree provider — register IMMEDIATELY so tree renders right away
     treeProvider = new S3TreeProvider(bucketStorage, s3Service);
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('s3ManagementBuckets', treeProvider),
-    );
+
+    // Use createTreeView instead of registerTreeDataProvider to enable drag-and-drop
+    const treeView = vscode.window.createTreeView('s3ManagementBuckets', {
+        treeDataProvider: treeProvider,
+        dragAndDropController: treeProvider,
+    });
+    context.subscriptions.push(treeView);
 
     // Initialize object details panel
     objectDetailsPanel = new ObjectDetailsPanel(
@@ -301,6 +306,21 @@ function registerCommands(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('s3-management-tool.downloadFolder', async (item: S3PrefixItem) => {
             const { downloadFolder } = await import('./commands/download-folder');
             await downloadFolder(item, s3Service);
+        }),
+    );
+
+    // --- Feature #6: Versioned Bucket Support ---
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.viewVersions', async (item: S3ObjectItem) => {
+            const panel = await VersionsPanel.create(extensionContext.extensionUri, {
+                bucket: item.bucket,
+                key: item.key,
+                region: item.region,
+                s3Service,
+                treeProvider: treeProvider,
+            });
+            // Panel creation handles all guard checks and errors internally
         }),
     );
 }

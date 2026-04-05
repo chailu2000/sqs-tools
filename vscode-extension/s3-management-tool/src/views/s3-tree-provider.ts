@@ -1,5 +1,6 @@
 /**
  * S3TreeProvider — implements vscode.TreeDataProvider<S3TreeItem>
+ * and vscode.TreeDragAndDropController<S3TreeItem> for drag-in uploads.
  *
  * Tree hierarchy:
  *   S3BucketItem  (contextValue: 's3Bucket')
@@ -11,9 +12,11 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { BucketStorage } from '../services/bucket-storage';
 import { S3Service } from '../services/s3-service';
 import { BucketConfig } from '../models/s3-models';
+import { uploadDirectory, uploadSingleFile } from '../utils/upload-helpers';
 
 // ---------------------------------------------------------------------------
 // Tree item types
@@ -119,7 +122,12 @@ export function formatSize(bytes: number): string {
 // S3TreeProvider
 // ---------------------------------------------------------------------------
 
-export class S3TreeProvider implements vscode.TreeDataProvider<S3TreeItem> {
+export class S3TreeProvider implements
+    vscode.TreeDataProvider<S3TreeItem>,
+    vscode.TreeDragAndDropController<S3TreeItem> {
+    readonly dropMimeTypes = ['files', 'text/uri-list', 'application/vnd.code.tree.s3object'];
+    readonly dragMimeTypes = ['application/vnd.code.tree.s3object'];
+
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<S3TreeItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
@@ -195,5 +203,423 @@ export class S3TreeProvider implements vscode.TreeDataProvider<S3TreeItem> {
         );
 
         return [...prefixItems, ...objectItems];
+    }
+
+    // -----------------------------------------------------------------------
+    // TreeDragAndDropController
+    // -----------------------------------------------------------------------
+
+    /**
+     * Called when dragging starts from this tree. Serializes S3 objects/prefixes
+     * so they can be dropped elsewhere in the tree.
+     */
+    handleDrag(
+        source: readonly S3TreeItem[],
+        dataTransfer: vscode.DataTransfer,
+        token: vscode.CancellationToken,
+    ): void | Thenable<void> {
+        // Serialize the dragged S3 items as JSON
+        const s3Items = source
+            .filter(item => item instanceof S3ObjectItem || item instanceof S3PrefixItem)
+            .map(item => {
+                if (item instanceof S3ObjectItem) {
+                    return {
+                        type: 'object' as const,
+                        bucket: item.bucket,
+                        region: item.region,
+                        key: item.key,
+                        size: item.size,
+                    };
+                } else {
+                    return {
+                        type: 'prefix' as const,
+                        bucket: item.bucket,
+                        region: item.region,
+                        prefix: item.prefix,
+                    };
+                }
+            });
+
+        if (s3Items.length > 0) {
+            dataTransfer.set(
+                'application/vnd.code.tree.s3object',
+                new vscode.DataTransferItem(JSON.stringify(s3Items)),
+            );
+        }
+    }
+
+    async handleDrop(
+        target: S3TreeItem | undefined,
+        dataTransfer: vscode.DataTransfer,
+        token: vscode.CancellationToken,
+    ): Promise<void> {
+        // 1. Resolve target bucket + prefix
+        let bucket: string;
+        let prefix: string;
+        let region: string;
+
+        if (target instanceof S3BucketItem) {
+            bucket = target.config.name;
+            prefix = target.config.prefix ?? '';
+            region = target.config.region;
+        } else if (target instanceof S3PrefixItem) {
+            bucket = target.bucket;
+            prefix = target.prefix;
+            region = target.region;
+        } else {
+            vscode.window.showErrorMessage('Drop target must be a bucket or prefix.');
+            return;
+        }
+
+        // 2. Check if this is an S3-to-S3 drag operation
+        const s3DragItem = dataTransfer.get('application/vnd.code.tree.s3object');
+        if (s3DragItem) {
+            await this.handleS3ToS3Drop(s3DragItem, bucket, prefix, region, target, token);
+            return;
+        }
+
+        // 3. Handle file upload from local/VS Code explorer
+        const fileUris = this.extractFileUris(dataTransfer);
+        if (fileUris.length === 0) {
+            return;
+        }
+
+        await this.handleFileUploadDrop(fileUris, bucket, prefix, region, target, token);
+    }
+
+    /**
+     * Handles drag-and-drop of S3 objects/prefixes within or between buckets.
+     */
+    private async handleS3ToS3Drop(
+        s3DragItem: vscode.DataTransferItem,
+        destBucket: string,
+        destPrefix: string,
+        destRegion: string,
+        target: S3TreeItem,
+        token: vscode.CancellationToken,
+    ): Promise<void> {
+        // Parse the dragged S3 items
+        const text = await s3DragItem.asString();
+        let draggedItems: Array<{ type: 'object' | 'prefix'; bucket: string; region: string; key?: string; prefix?: string }>;
+        try {
+            draggedItems = JSON.parse(text);
+        } catch {
+            vscode.window.showErrorMessage('Failed to parse dragged S3 items.');
+            return;
+        }
+
+        if (draggedItems.length === 0) {
+            return;
+        }
+
+        // Ask user whether to copy or move
+        const action = await vscode.window.showQuickPick(
+            [
+                { label: 'Copy', description: 'Copy items to destination' },
+                { label: 'Move', description: 'Move items to destination (delete from source)' },
+            ],
+            { placeHolder: 'Choose action for dragged S3 items' },
+        );
+
+        if (!action) {
+            return; // User cancelled
+        }
+
+        const isMove = action.label === 'Move';
+
+        // Track source buckets for refresh (needed for move operations)
+        const sourceBuckets = new Set<string>();
+        for (const item of draggedItems) {
+            sourceBuckets.add(item.bucket);
+        }
+
+        // Process each dragged item
+        let processed = 0;
+        let errors = 0;
+        const errorDetails: string[] = [];
+
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `${isMove ? 'Moving' : 'Copying'} ${draggedItems.length} item(s)...`,
+                cancellable: true,
+            },
+            async (progress, innerToken) => {
+                for (let i = 0; i < draggedItems.length; i++) {
+                    if (token.isCancellationRequested || innerToken.isCancellationRequested) {
+                        vscode.window.showWarningMessage(
+                            `Operation cancelled. ${processed} item(s) processed.`,
+                        );
+                        return;
+                    }
+
+                    const item = draggedItems[i];
+                    progress.report({ message: `[${i + 1}/${draggedItems.length}] ${item.key || item.prefix}` });
+
+                    try {
+                        if (item.type === 'object') {
+                            // Copy/move single object
+                            const srcKey = item.key!;
+                            const fileName = srcKey.split('/').pop()!;
+                            const destKey = destPrefix ? `${destPrefix}${fileName}` : fileName;
+
+                            await this.s3Service.copyObject(
+                                item.bucket,
+                                srcKey,
+                                destBucket,
+                                destKey,
+                                item.region,
+                                destRegion,
+                            );
+
+                            // If move, delete the source
+                            if (isMove) {
+                                await this.s3Service.deleteObject(item.bucket, srcKey, item.region);
+                            }
+
+                            processed++;
+                        } else if (item.type === 'prefix') {
+                            // Copy/move entire prefix (folder)
+                            const srcPrefix = item.prefix!;
+                            const folderName = srcPrefix.endsWith('/') ? srcPrefix.slice(0, -1).split('/').pop()! : srcPrefix.split('/').pop()!;
+                            const destPrefixForFolder = destPrefix ? `${destPrefix}${folderName}/` : `${folderName}/`;
+
+                            const result = await this.copyPrefix(
+                                item.bucket,
+                                srcPrefix,
+                                destBucket,
+                                destPrefixForFolder,
+                                item.region,
+                                destRegion,
+                                isMove,
+                                (message) => { progress.report({ message }); },
+                                { get isCancellationRequested() { return innerToken.isCancellationRequested || token.isCancellationRequested; } },
+                            );
+
+                            processed += result.processed;
+                            errors += result.errors;
+                            errorDetails.push(...result.errorDetails);
+                        }
+                    } catch (err) {
+                        errors++;
+                        const msg = err instanceof Error ? err.message : String(err);
+                        errorDetails.push(`${item.key || item.prefix}: ${msg}`);
+                    }
+                }
+            },
+        );
+
+        // Summary
+        if (processed > 0 || errors > 0) {
+            let summary = `${isMove ? 'Moved' : 'Copied'}: ${processed}`;
+            if (errors > 0) { summary += ` · Errors: ${errors}`; }
+
+            if (errors > 0) {
+                vscode.window.showWarningMessage(summary);
+            } else {
+                vscode.window.showInformationMessage(summary);
+            }
+        }
+
+        // Refresh destination tree node
+        this.refresh(target);
+
+        // For move operations, also refresh all source buckets so deleted items disappear
+        if (isMove) {
+            // Refresh the entire tree to ensure source changes are visible
+            this.refresh();
+        }
+    }
+
+    /**
+     * Copies (or moves) all objects under a prefix to a destination prefix.
+     */
+    private async copyPrefix(
+        srcBucket: string,
+        srcPrefix: string,
+        destBucket: string,
+        destPrefix: string,
+        srcRegion: string,
+        destRegion: string,
+        isMove: boolean,
+        onProgress: (message: string) => void,
+        cancellation: { readonly isCancellationRequested: boolean },
+    ): Promise<{ processed: number; errors: number; errorDetails: string[] }> {
+        let processed = 0;
+        let errors = 0;
+        const errorDetails: string[] = [];
+
+        // List all objects under the source prefix
+        let continuationToken: string | undefined;
+        do {
+            const page = await this.s3Service.listObjects(srcBucket, srcPrefix, srcRegion, continuationToken);
+
+            for (const obj of page.objects) {
+                if (cancellation.isCancellationRequested) {
+                    break;
+                }
+
+                try {
+                    // Calculate destination key
+                    const relativeKey = obj.key.startsWith(srcPrefix)
+                        ? obj.key.slice(srcPrefix.length)
+                        : obj.key;
+                    const destKey = destPrefix + relativeKey;
+
+                    onProgress(`Processing ${obj.key}...`);
+
+                    // Copy to destination
+                    await this.s3Service.copyObject(
+                        srcBucket,
+                        obj.key,
+                        destBucket,
+                        destKey,
+                        srcRegion,
+                        destRegion,
+                    );
+
+                    // Delete source if moving
+                    if (isMove) {
+                        await this.s3Service.deleteObject(srcBucket, obj.key, srcRegion);
+                    }
+
+                    processed++;
+                } catch (err) {
+                    errors++;
+                    const msg = err instanceof Error ? err.message : String(err);
+                    errorDetails.push(`${obj.key}: ${msg}`);
+                }
+            }
+
+            continuationToken = page.nextContinuationToken;
+        } while (continuationToken && !cancellation.isCancellationRequested);
+
+        return { processed, errors, errorDetails };
+    }
+
+    /**
+     * Handles drag-and-drop of local files to S3.
+     */
+    private async handleFileUploadDrop(
+        fileUris: vscode.Uri[],
+        bucket: string,
+        prefix: string,
+        region: string,
+        target: S3TreeItem,
+        token: vscode.CancellationToken,
+    ): Promise<void> {
+        // 3. Process each dropped item
+        let uploaded = 0;
+        let skipped = 0;
+        let errors = 0;
+        const errorDetails: string[] = [];
+
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Uploading ${fileUris.length} item(s) to s3://${bucket}/${prefix || '(root)'}…`,
+                cancellable: true,
+            },
+            async (progress, innerToken) => {
+                for (let i = 0; i < fileUris.length; i++) {
+                    if (token.isCancellationRequested || innerToken.isCancellationRequested) {
+                        vscode.window.showWarningMessage(
+                            `Upload cancelled. ${uploaded} file(s) uploaded.`,
+                        );
+                        return;
+                    }
+
+                    const uri = fileUris[i];
+                    progress.report({ message: `[${i + 1}/${fileUris.length}] ${uri.fsPath}` });
+
+                    try {
+                        const stat = await fs.promises.stat(uri.fsPath);
+                        if (stat.isFile()) {
+                            const destKey = prefix ? `${prefix}${uri.fsPath.split('/').pop()!}` : uri.fsPath.split('/').pop()!;
+                            await uploadSingleFile(uri.fsPath, bucket, destKey, region, this.s3Service);
+                            uploaded++;
+                        } else if (stat.isDirectory()) {
+                            const folderName = uri.fsPath.split('/').pop()!;
+                            const destPrefixForDir = prefix ? `${prefix}${folderName}/` : `${folderName}/`;
+                            const result = await uploadDirectory(
+                                uri.fsPath,
+                                bucket,
+                                destPrefixForDir,
+                                region,
+                                this.s3Service,
+                                (message) => { progress.report({ message }); },
+                                { get isCancellationRequested() { return innerToken.isCancellationRequested || token.isCancellationRequested; } },
+                            );
+                            uploaded += result.uploaded;
+                            skipped += result.skipped;
+                            errors += result.errors;
+                            errorDetails.push(...result.errorDetails);
+                        }
+                    } catch (err) {
+                        errors++;
+                        const msg = err instanceof Error ? err.message : String(err);
+                        errorDetails.push(`${uri.fsPath}: ${msg}`);
+                    }
+                }
+            },
+        );
+
+        // 4. Summary
+        if (uploaded > 0 || skipped > 0 || errors > 0) {
+            let summary = `Uploaded: ${uploaded}`;
+            if (skipped > 0) { summary += ` · Skipped: ${skipped}`; }
+            if (errors > 0) { summary += ` · Errors: ${errors}`; }
+
+            if (errors > 0) {
+                vscode.window.showWarningMessage(summary);
+            } else {
+                vscode.window.showInformationMessage(summary);
+            }
+        }
+
+        // 5. Refresh the tree node where items were dropped
+        if (target instanceof S3BucketItem || target instanceof S3PrefixItem) {
+            this.refresh(target);
+        }
+    }
+
+    /**
+     * Extracts file URIs from a DataTransfer, handling both 'files' and
+     * 'text/uri-list' MIME types.
+     */
+    private extractFileUris(dataTransfer: vscode.DataTransfer): vscode.Uri[] {
+        const uris: vscode.Uri[] = [];
+
+        // Try 'files' MIME type (drag from OS file explorer or VS Code explorer)
+        // When you drag files, VS Code provides them under the 'files' mime type
+        const filesItem = dataTransfer.get('files');
+        if (filesItem) {
+            // The value should be an array of DataTransferFile objects
+            const files = filesItem.value as Array<{ uri?: vscode.Uri }>;
+            if (Array.isArray(files)) {
+                for (const file of files) {
+                    if (file.uri) {
+                        uris.push(file.uri);
+                    }
+                }
+            }
+        }
+
+        // Also try 'text/uri-list' (drag from VS Code explorer)
+        const uriListItem = dataTransfer.get('text/uri-list');
+        if (uriListItem) {
+            const text = uriListItem.value as string;
+            if (typeof text === 'string') {
+                for (const line of text.split(/\r?\n/).filter(Boolean)) {
+                    try {
+                        uris.push(vscode.Uri.parse(line));
+                    } catch {
+                        // skip unparseable URIs
+                    }
+                }
+            }
+        }
+
+        return uris;
     }
 }
