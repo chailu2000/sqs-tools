@@ -12,6 +12,7 @@
 import {
     ListBucketsCommand,
     ListObjectsV2Command,
+    ListObjectVersionsCommand,
     GetBucketLocationCommand,
     GetBucketVersioningCommand,
     GetBucketPolicyCommand,
@@ -37,6 +38,7 @@ import {
     ListObjectsPage,
     ObjectMetadata,
     ObjectSummary,
+    ObjectVersion,
     ProgressCallback,
     ValidationResult,
     VersioningStatus,
@@ -263,19 +265,27 @@ export class S3Service {
     // -----------------------------------------------------------------------
 
     /**
-     * Downloads an object and returns a readable stream.
+     * Downloads an object (or a specific version) and returns a readable stream.
      */
-    async getObject(bucket: string, key: string, region: string): Promise<NodeJS.ReadableStream> {
-        this.assertKeyInScope(key, undefined); // no bucketConfig here; callers enforce scope
+    async getObject(
+        bucket: string,
+        key: string,
+        region: string,
+        versionId?: string,
+    ): Promise<NodeJS.ReadableStream> {
+        this.assertKeyInScope(key, undefined);
         try {
             const client = this.factory.getClient(region);
             const response = await withRetry(() =>
-                client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+                client.send(new GetObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    VersionId: versionId || undefined,
+                }))
             );
             if (!response.Body) {
                 throw new Error('Empty response body from S3');
             }
-            // AWS SDK v3 returns a SdkStreamMixin; cast to ReadableStream
             return response.Body as unknown as NodeJS.ReadableStream;
         } catch (error) {
             throw this.wrapError(error, `Failed to download object "${key}" from bucket "${bucket}"`);
@@ -471,6 +481,118 @@ export class S3Service {
             return await getSignedUrl(client, command, { expiresIn: expirySeconds });
         } catch (error) {
             throw this.wrapError(error, `Failed to generate presigned URL for "${key}" in bucket "${bucket}"`);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Object versions (S3 versioning)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Lists all versions of a specific object key.
+     * Returns versions sorted by lastModified descending (newest first).
+     */
+    async listObjectVersions(
+        bucket: string,
+        key: string,
+        region: string,
+    ): Promise<ObjectVersion[]> {
+        const client = this.factory.getClient(region);
+        const allVersions: ObjectVersion[] = [];
+        let keyMarker: string | undefined;
+        let versionIdMarker: string | undefined;
+
+        do {
+            const resp = await withRetry(() =>
+                client.send(new ListObjectVersionsCommand({
+                    Bucket: bucket,
+                    Prefix: key,
+                    KeyMarker: keyMarker,
+                    VersionIdMarker: versionIdMarker,
+                }))
+            );
+
+            for (const v of resp.Versions ?? []) {
+                if (v.Key !== key) { continue; }
+                allVersions.push({
+                    versionId: v.VersionId ?? 'null',
+                    isLatest: v.IsLatest ?? false,
+                    size: v.Size ?? 0,
+                    lastModified: v.LastModified ?? new Date(0),
+                    etag: v.ETag ?? '',
+                    storageClass: v.StorageClass,
+                    deleteMarker: false,
+                });
+            }
+
+            for (const m of resp.DeleteMarkers ?? []) {
+                if (m.Key !== key) { continue; }
+                allVersions.push({
+                    versionId: m.VersionId ?? 'null',
+                    isLatest: m.IsLatest ?? false,
+                    size: 0,
+                    lastModified: m.LastModified ?? new Date(0),
+                    etag: '',
+                    deleteMarker: true,
+                });
+            }
+
+            keyMarker = resp.NextKeyMarker;
+            versionIdMarker = resp.NextVersionIdMarker;
+        } while (keyMarker);
+
+        return allVersions.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+    }
+
+    /**
+     * Restores a previous version by copying it to the current key.
+     */
+    async restoreVersion(
+        bucket: string,
+        key: string,
+        versionId: string,
+        region: string,
+    ): Promise<void> {
+        try {
+            const client = this.factory.getClient(region);
+            await withRetry(() =>
+                client.send(new CopyObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    CopySource: `/${bucket}/${key}?versionId=${encodeURIComponent(versionId)}`,
+                }))
+            );
+        } catch (error) {
+            throw this.wrapError(
+                error,
+                `Failed to restore version "${versionId}" of "${key}" in bucket "${bucket}"`,
+            );
+        }
+    }
+
+    /**
+     * Deletes a specific version of an object.
+     */
+    async deleteVersion(
+        bucket: string,
+        key: string,
+        versionId: string,
+        region: string,
+    ): Promise<void> {
+        try {
+            const client = this.factory.getClient(region);
+            await withRetry(() =>
+                client.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    VersionId: versionId,
+                }))
+            );
+        } catch (error) {
+            throw this.wrapError(
+                error,
+                `Failed to delete version "${versionId}" of "${key}" from bucket "${bucket}"`,
+            );
         }
     }
 
