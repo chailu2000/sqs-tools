@@ -166,3 +166,29 @@ export type FileClassification =
     | 'local-newer'
     | 'remote-newer'
     | 'conflicted';
+
+// ---------------------------------------------------------------------------
+// Object versions (S3 versioning)
+// ---------------------------------------------------------------------------
+
+export interface ObjectVersion {
+    versionId: string;
+    isLatest: boolean;
+    size: number;
+    lastModified: Date;
+    etag: string;
+    storageClass?: string;
+    deleteMarker: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Upload result (recursive directory upload)
+// ---------------------------------------------------------------------------
+
+export interface UploadResult {
+    uploaded: number;
+    skipped: number;
+    errors: number;
+    totalBytes: number;
+    errorDetails: string[];
+}

@@ -8,7 +8,6 @@
  * Requirements: 13.1–13.10, 14.1–14.8, 15.1–15.8, 18.4, 21.1–21.4
  */
 
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -22,6 +21,10 @@ import {
     FileClassification,
 } from '../models/s3-models';
 
+// Re-export shared utilities so existing importers don't break
+export { walkDirectory, computeLocalMd5, normalizeEtag, isMultipartEtag } from '../utils/fs-utils';
+import { computeLocalMd5, normalizeEtag, isMultipartEtag, walkDirectory, LocalFile } from '../utils/fs-utils';
+
 // ---------------------------------------------------------------------------
 // CancellationToken interface (mirrors vscode.CancellationToken)
 // ---------------------------------------------------------------------------
@@ -31,42 +34,12 @@ export interface CancellationToken {
 }
 
 // ---------------------------------------------------------------------------
-// Checksum utilities
+// Exclude-pattern matching (stays here — sync-specific)
 // ---------------------------------------------------------------------------
-
-/**
- * Computes the MD5 hash of a local file and returns it as a hex string.
- */
-export function computeLocalMd5(filePath: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const hash = crypto.createHash('md5');
-        const stream = fs.createReadStream(filePath);
-        stream.on('data', (chunk) => hash.update(chunk));
-        stream.on('end', () => resolve(hash.digest('hex')));
-        stream.on('error', reject);
-    });
-}
-
-/**
- * Strips surrounding double-quotes from an S3 ETag.
- * S3 returns ETags wrapped in double-quotes, e.g. `"abc123"`.
- */
-export function normalizeEtag(etag: string): string {
-    return etag.replace(/^"(.*)"$/, '$1');
-}
-
-/**
- * Returns true if the ETag represents a multipart upload.
- * Multipart ETags contain a '-' followed by the part count, e.g. "abc123-5".
- */
-export function isMultipartEtag(etag: string): boolean {
-    return normalizeEtag(etag).includes('-');
-}
 
 /**
  * Simple glob pattern matcher.
  * Supports '*' (matches any chars except '/') and '**' (matches any chars including '/').
- * Falls back to exact suffix matching for plain strings.
  */
 export function matchesExcludePattern(filePath: string, patterns: string[]): boolean {
     const normalizedPath = filePath.replace(/\\/g, '/');
@@ -74,17 +47,13 @@ export function matchesExcludePattern(filePath: string, patterns: string[]): boo
 }
 
 function globMatch(filePath: string, pattern: string): string | boolean {
-    // Normalize separators
     const p = pattern.replace(/\\/g, '/');
-
-    // Convert glob to regex
     let regexStr = '';
     let i = 0;
     while (i < p.length) {
         if (p[i] === '*' && p[i + 1] === '*') {
             regexStr += '.*';
             i += 2;
-            // Skip trailing slash after **
             if (p[i] === '/') { i++; }
         } else if (p[i] === '*') {
             regexStr += '[^/]*';
@@ -93,12 +62,10 @@ function globMatch(filePath: string, pattern: string): string | boolean {
             regexStr += '[^/]';
             i++;
         } else {
-            // Escape regex special chars
             regexStr += p[i].replace(/[.+^${}()|[\]\\]/g, '\\$&');
             i++;
         }
     }
-
     const regex = new RegExp(`(^|/)${regexStr}$`);
     return regex.test(filePath);
 }
@@ -107,24 +74,9 @@ function globMatch(filePath: string, pattern: string): string | boolean {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-interface LocalFile {
+interface LocalFileInternal {
     absolutePath: string;
     relativePath: string;
-}
-
-/** Recursively walks a directory and returns all files. */
-function walkDirectory(dir: string): LocalFile[] {
-    const results: LocalFile[] = [];
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-        const abs = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-            results.push(...walkDirectory(abs));
-        } else if (entry.isFile()) {
-            results.push({ absolutePath: abs, relativePath: '' });
-        }
-    }
-    return results;
 }
 
 function makeSyncError(file: string, operation: SyncError['operation'], err: unknown): SyncError {
@@ -193,10 +145,7 @@ export class SyncService {
         // 1. Walk local directory
         let localFiles: LocalFile[];
         try {
-            localFiles = walkDirectory(localPath).map((f) => ({
-                ...f,
-                relativePath: path.relative(localPath, f.absolutePath).replace(/\\/g, '/'),
-            }));
+            localFiles = walkDirectory(localPath, localPath);
         } catch (err) {
             result.errors.push(makeSyncError(localPath, 'upload', err));
             return finalizeResult(result, false);
@@ -345,10 +294,7 @@ export class SyncService {
             );
             let localFiles: LocalFile[];
             try {
-                localFiles = walkDirectory(localPath).map((f) => ({
-                    ...f,
-                    relativePath: path.relative(localPath, f.absolutePath).replace(/\\/g, '/'),
-                }));
+                localFiles = walkDirectory(localPath, localPath);
             } catch {
                 localFiles = [];
             }
@@ -421,10 +367,7 @@ export class SyncService {
         // 1. Walk local directory
         let localFiles: LocalFile[];
         try {
-            localFiles = walkDirectory(localPath).map((f) => ({
-                ...f,
-                relativePath: path.relative(localPath, f.absolutePath).replace(/\\/g, '/'),
-            }));
+            localFiles = walkDirectory(localPath, localPath);
         } catch (err) {
             result.errors.push(makeSyncError(localPath, 'upload', err));
             return finalizeResult(result, false);
