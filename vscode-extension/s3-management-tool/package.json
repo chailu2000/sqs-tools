@@ -132,6 +132,11 @@
                 "command": "s3-management-tool.downloadFolder",
                 "title": "Download Folder",
                 "icon": "$(cloud-download)"
+            },
+            {
+                "command": "s3-management-tool.viewVersions",
+                "title": "View Versions",
+                "icon": "$(history)"
             }
         ],
         "views": {
@@ -256,6 +261,11 @@
                     "command": "s3-management-tool.generatePresignedUrl",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@7"
+                },
+                {
+                    "command": "s3-management-tool.viewVersions",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@8"
                 }
             ]
         }
