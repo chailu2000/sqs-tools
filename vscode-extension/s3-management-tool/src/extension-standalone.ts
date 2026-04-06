@@ -172,12 +172,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
         }),
     );
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('s3-management-tool.deleteObject', async (item: S3ObjectItem) => {
-            const { deleteObject } = await import('./commands/delete-object');
-            await deleteObject(item, s3Service, treeProvider);
-        }),
-    );
+    // deleteObject is registered later with batch-delete support (multi-select)
 
     context.subscriptions.push(
         vscode.commands.registerCommand('s3-management-tool.copyObject', async (item: S3ObjectItem) => {
