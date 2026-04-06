@@ -26,6 +26,9 @@ import {
     CompleteMultipartUploadCommand,
     AbortMultipartUploadCommand,
     CompletedPart,
+    GetObjectTaggingCommand,
+    PutObjectTaggingCommand,
+    Tag,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
@@ -592,6 +595,61 @@ export class S3Service {
             throw this.wrapError(
                 error,
                 `Failed to delete version "${versionId}" of "${key}" from bucket "${bucket}"`,
+            );
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Object Tag Management
+    // -----------------------------------------------------------------------
+
+    /**
+     * Gets the tags for an S3 object.
+     */
+    async getObjectTagging(
+        bucket: string,
+        key: string,
+        region: string,
+    ): Promise<Tag[]> {
+        try {
+            const client = this.factory.getClient(region);
+            const resp = await withRetry(() =>
+                client.send(new GetObjectTaggingCommand({
+                    Bucket: bucket,
+                    Key: key,
+                }))
+            );
+            return resp.TagSet ?? [];
+        } catch (error) {
+            throw this.wrapError(
+                error,
+                `Failed to get tags for object "${key}" in bucket "${bucket}"`,
+            );
+        }
+    }
+
+    /**
+     * Sets (replaces all) tags for an S3 object.
+     */
+    async putObjectTagging(
+        bucket: string,
+        key: string,
+        region: string,
+        tags: Tag[],
+    ): Promise<void> {
+        try {
+            const client = this.factory.getClient(region);
+            await withRetry(() =>
+                client.send(new PutObjectTaggingCommand({
+                    Bucket: bucket,
+                    Key: key,
+                    Tagging: { TagSet: tags },
+                }))
+            );
+        } catch (error) {
+            throw this.wrapError(
+                error,
+                `Failed to set tags for object "${key}" in bucket "${bucket}"`,
             );
         }
     }
