@@ -268,6 +268,46 @@
                     "group": "1_object@2"
                 },
                 {
+                    "command": "s3-management-tool.downloadObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@3"
+                },
+                {
+                    "command": "s3-management-tool.previewObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@4"
+                },
+                {
+                    "command": "s3-management-tool.copyObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@5"
+                },
+                {
+                    "command": "s3-management-tool.viewMetadata",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@6"
+                },
+                {
+                    "command": "s3-management-tool.copyS3Uri",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@7"
+                },
+                {
+                    "command": "s3-management-tool.generatePresignedUrl",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@8"
+                },
+                {
+                    "command": "s3-management-tool.viewVersions",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@9"
+                },
+                {
+                    "command": "s3-management-tool.manageTags",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@10"
+                },
+                {
                     "command": "s3-management-tool.downloadSelected",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "inline"
