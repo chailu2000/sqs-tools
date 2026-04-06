@@ -449,6 +449,7 @@ export class S3TreeProvider implements
 
     /**
      * Copies (or moves) all objects under a prefix to a destination prefix.
+     * Recursively handles nested sub-folders.
      */
     private async copyPrefix(
         srcBucket: string,
@@ -465,53 +466,47 @@ export class S3TreeProvider implements
         let errors = 0;
         const errorDetails: string[] = [];
 
-        // List all objects under the source prefix
-        let continuationToken: string | undefined;
-        do {
-            const page = await this.s3Service.listObjects(srcBucket, srcPrefix, srcRegion, continuationToken);
+        // Recursively collect ALL object keys under the entire folder tree
+        const allKeys: string[] = [];
+        await this.collectAllKeys(srcBucket, srcPrefix, srcRegion, allKeys, cancellation);
 
-            for (const obj of page.objects) {
-                if (cancellation.isCancellationRequested) {
-                    break;
-                }
-
-                try {
-                    // Calculate destination key
-                    const relativeKey = obj.key.startsWith(srcPrefix)
-                        ? obj.key.slice(srcPrefix.length)
-                        : obj.key;
-                    const destKey = destPrefix + relativeKey;
-
-                    onProgress(`Processing ${obj.key}...`);
-
-                    // Copy to destination
-                    await this.s3Service.copyObject(
-                        srcBucket,
-                        obj.key,
-                        destBucket,
-                        destKey,
-                        srcRegion,
-                        destRegion,
-                    );
-
-                    // Delete source if moving
-                    if (isMove) {
-                        await this.s3Service.deleteObject(srcBucket, obj.key, srcRegion);
-                    }
-
-                    processed++;
-                } catch (err) {
-                    errors++;
-                    const msg = err instanceof Error ? err.message : String(err);
-                    errorDetails.push(`${obj.key}: ${msg}`);
-                }
+        // Copy each object
+        for (const key of allKeys) {
+            if (cancellation.isCancellationRequested) {
+                break;
             }
 
-            continuationToken = page.nextContinuationToken;
-        } while (continuationToken && !cancellation.isCancellationRequested);
+            try {
+                const relativeKey = key.startsWith(srcPrefix)
+                    ? key.slice(srcPrefix.length)
+                    : key;
+                const destKey = destPrefix + relativeKey;
 
-        // If moving, also delete the folder placeholder object (zero-byte object ending with /)
-        // This is filtered out by listObjects so we need to delete it explicitly
+                onProgress(`Processing ${key}...`);
+
+                await this.s3Service.copyObject(
+                    srcBucket,
+                    key,
+                    destBucket,
+                    destKey,
+                    srcRegion,
+                    destRegion,
+                );
+
+                // Delete source if moving
+                if (isMove) {
+                    await this.s3Service.deleteObject(srcBucket, key, srcRegion);
+                }
+
+                processed++;
+            } catch (err) {
+                errors++;
+                const msg = err instanceof Error ? err.message : String(err);
+                errorDetails.push(`${key}: ${msg}`);
+            }
+        }
+
+        // If moving, also delete the folder placeholder object
         if (isMove) {
             try {
                 await this.s3Service.deleteObject(srcBucket, srcPrefix, srcRegion);
@@ -521,6 +516,39 @@ export class S3TreeProvider implements
         }
 
         return { processed, errors, errorDetails };
+    }
+
+    /**
+     * Recursively collects ALL object keys under a prefix, including objects
+     * in nested sub-folders.
+     */
+    private async collectAllKeys(
+        srcBucket: string,
+        srcPrefix: string,
+        srcRegion: string,
+        results: string[],
+        cancellation: { readonly isCancellationRequested: boolean },
+    ): Promise<void> {
+        let continuationToken: string | undefined;
+
+        do {
+            if (cancellation.isCancellationRequested) break;
+
+            const page = await this.s3Service.listObjects(
+                srcBucket,
+                srcPrefix,
+                srcRegion,
+                continuationToken,
+            );
+
+            results.push(...page.objects.map(obj => obj.key));
+
+            for (const subPrefix of page.commonPrefixes) {
+                await this.collectAllKeys(srcBucket, subPrefix, srcRegion, results, cancellation);
+            }
+
+            continuationToken = page.nextContinuationToken;
+        } while (continuationToken);
     }
 
     /**

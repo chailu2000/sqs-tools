@@ -125,80 +125,61 @@ async function renamePrefix(
     await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,
-            title: `Renaming folder "${srcPrefix.split('/').filter(Boolean).pop()}" to "${newName}"...`,
+            title: `Scanning "${srcPrefix.split('/').filter(Boolean).pop()}"...`,
             cancellable: false,
         },
         async (progress) => {
-            let copied = 0;
+            // Recursively collect ALL objects under the entire folder tree
+            const allObjects: string[] = [];
+            await collectAllObjects(s3Service, item.bucket, item.region, srcPrefix, allObjects, progress);
+
+            progress.report({ message: `Found ${allObjects.length} object(s) to rename...` });
+
             let errors = 0;
             const errorDetails: string[] = [];
 
-            // List all objects under the source prefix
-            let continuationToken: string | undefined;
-            const objectsToRename: Array<{ key: string }> = [];
-
-            do {
-                const page = await s3Service.listObjects(
-                    item.bucket,
-                    srcPrefix,
-                    item.region,
-                    continuationToken,
-                );
-
-                objectsToRename.push(...page.objects.map(obj => ({ key: obj.key })));
-                continuationToken = page.nextContinuationToken;
-            } while (continuationToken);
-
-            progress.report({ message: `Found ${objectsToRename.length} object(s) to rename...` });
-
             // Copy each object to the new prefix
-            for (let i = 0; i < objectsToRename.length; i++) {
-                const obj = objectsToRename[i];
-                progress.report({ message: `[${i + 1}/${objectsToRename.length}] ${obj.key}` });
+            for (let i = 0; i < allObjects.length; i++) {
+                const key = allObjects[i];
+                progress.report({ message: `[${i + 1}/${allObjects.length}] ${key}` });
 
                 try {
-                    // Calculate new key
-                    const relativeKey = obj.key.startsWith(srcPrefix)
-                        ? obj.key.slice(srcPrefix.length)
-                        : obj.key;
+                    const relativeKey = key.startsWith(srcPrefix)
+                        ? key.slice(srcPrefix.length)
+                        : key;
                     const newKey = destPrefix + relativeKey;
 
-                    // Copy to new key
                     await s3Service.copyObject(
                         item.bucket,
-                        obj.key,
+                        key,
                         item.bucket,
                         newKey,
                         item.region,
                         item.region,
                     );
-
-                    copied++;
                 } catch (err) {
                     errors++;
                     const msg = err instanceof Error ? err.message : String(err);
-                    errorDetails.push(`${obj.key}: ${msg}`);
+                    errorDetails.push(`${key}: ${msg}`);
                 }
             }
 
             // Delete all originals (only if all copies succeeded)
             if (errors === 0) {
-                for (let i = 0; i < objectsToRename.length; i++) {
-                    const obj = objectsToRename[i];
-                    progress.report({ message: `Deleting ${i + 1}/${objectsToRename.length}...` });
+                for (let i = 0; i < allObjects.length; i++) {
+                    const key = allObjects[i];
+                    progress.report({ message: `Deleting ${i + 1}/${allObjects.length}...` });
 
                     try {
-                        await s3Service.deleteObject(item.bucket, obj.key, item.region);
+                        await s3Service.deleteObject(item.bucket, key, item.region);
                     } catch (err) {
-                        // Log but don't fail the whole operation
                         const msg = err instanceof Error ? err.message : String(err);
-                        errorDetails.push(`DELETE ${obj.key}: ${msg}`);
+                        errorDetails.push(`DELETE ${key}: ${msg}`);
                         errors++;
                     }
                 }
 
-                // Also delete the folder placeholder object (zero-byte object ending with /)
-                // This is filtered out by listObjects so we need to delete it explicitly
+                // Also delete the folder placeholder object
                 try {
                     await s3Service.deleteObject(item.bucket, srcPrefix, item.region);
                 } catch {
@@ -216,4 +197,34 @@ async function renamePrefix(
 
     vscode.window.showInformationMessage(`Renamed folder to "${newName}"`);
     treeProvider.refresh();
+}
+
+/**
+ * Recursively collects ALL object keys under a prefix, including objects
+ * in nested sub-folders. Handles the Delimiter: '/' pagination where
+ * commonPrefixes represent sub-folders whose contents are NOT returned.
+ */
+async function collectAllObjects(
+    s3Service: S3Service,
+    bucket: string,
+    region: string,
+    prefix: string,
+    results: string[],
+    progress: { report: (data: { message: string }) => void },
+): Promise<void> {
+    let continuationToken: string | undefined;
+
+    do {
+        const page = await s3Service.listObjects(bucket, prefix, region, continuationToken);
+
+        // Collect objects at this level
+        results.push(...page.objects.map(obj => obj.key));
+
+        // Recurse into each sub-folder (commonPrefix)
+        for (const subPrefix of page.commonPrefixes) {
+            await collectAllObjects(s3Service, bucket, region, subPrefix, results, progress);
+        }
+
+        continuationToken = page.nextContinuationToken;
+    } while (continuationToken);
 }

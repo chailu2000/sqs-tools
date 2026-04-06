@@ -117,31 +117,28 @@ async function deletePrefixRecursive(
     let errors = 0;
     const errorDetails: string[] = [];
 
-    let continuationToken: string | undefined;
-    do {
-        const page = await s3Service.listObjects(bucket, prefix, region, continuationToken);
+    // Recursively collect ALL object keys under the entire folder tree
+    const allKeys: string[] = [];
+    await collectAllKeysForDelete(s3Service, bucket, region, prefix, allKeys, cancellation);
 
-        for (const obj of page.objects) {
-            if (cancellation.isCancellationRequested) {
-                break;
-            }
-
-            try {
-                onProgress(`Deleting ${obj.key}...`);
-                await s3Service.deleteObject(bucket, obj.key, region);
-                deleted++;
-            } catch (err) {
-                errors++;
-                const msg = err instanceof Error ? err.message : String(err);
-                errorDetails.push(`${obj.key}: ${msg}`);
-            }
+    // Delete all collected objects
+    for (const key of allKeys) {
+        if (cancellation.isCancellationRequested) {
+            break;
         }
 
-        continuationToken = page.nextContinuationToken;
-    } while (continuationToken && !cancellation.isCancellationRequested);
+        try {
+            onProgress(`Deleting ${key}...`);
+            await s3Service.deleteObject(bucket, key, region);
+            deleted++;
+        } catch (err) {
+            errors++;
+            const msg = err instanceof Error ? err.message : String(err);
+            errorDetails.push(`${key}: ${msg}`);
+        }
+    }
 
-    // Also delete the folder placeholder object (zero-byte object ending with /)
-    // This is filtered out by listObjects so we need to delete it explicitly
+    // Also delete the folder placeholder object
     try {
         await s3Service.deleteObject(bucket, prefix, region);
         deleted++;
@@ -150,6 +147,31 @@ async function deletePrefixRecursive(
     }
 
     return { deleted, errors, errorDetails };
+}
+
+async function collectAllKeysForDelete(
+    s3Service: S3Service,
+    bucket: string,
+    region: string,
+    prefix: string,
+    results: string[],
+    cancellation: { readonly isCancellationRequested: boolean },
+): Promise<void> {
+    let continuationToken: string | undefined;
+
+    do {
+        if (cancellation.isCancellationRequested) break;
+
+        const page = await s3Service.listObjects(bucket, prefix, region, continuationToken);
+
+        results.push(...page.objects.map(obj => obj.key));
+
+        for (const subPrefix of page.commonPrefixes) {
+            await collectAllKeysForDelete(s3Service, bucket, region, subPrefix, results, cancellation);
+        }
+
+        continuationToken = page.nextContinuationToken;
+    } while (continuationToken);
 }
 
 function getItemLabel(item: S3ObjectItem | S3PrefixItem): string {
