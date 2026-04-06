@@ -189,8 +189,11 @@ async function renamePrefix(
 
                     try {
                         await s3Service.deleteObject(item.bucket, obj.key, item.region);
-                    } catch {
-                        // Best-effort cleanup — log but don't fail
+                    } catch (err) {
+                        // Log but don't fail the whole operation
+                        const msg = err instanceof Error ? err.message : String(err);
+                        errorDetails.push(`DELETE ${obj.key}: ${msg}`);
+                        errors++;
                     }
                 }
 
@@ -204,7 +207,9 @@ async function renamePrefix(
             }
 
             if (errors > 0) {
-                throw new Error(`Failed to copy ${errors} object(s):\n${errorDetails.join('\n')}`);
+                vscode.window.showWarningMessage(
+                    `Renamed with ${errors} error(s) during cleanup:\n${errorDetails.slice(0, 3).join('\n')}`,
+                );
             }
         },
     );

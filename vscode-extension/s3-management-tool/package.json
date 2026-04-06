@@ -238,6 +238,11 @@
                     "group": "1_object@3"
                 },
                 {
+                    "command": "s3-management-tool.deleteObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
+                    "group": "1_object@4"
+                },
+                {
                     "command": "s3-management-tool.downloadObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@1"
