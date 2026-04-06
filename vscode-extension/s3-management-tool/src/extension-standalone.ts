@@ -66,6 +66,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const treeView = vscode.window.createTreeView('s3ManagementBuckets', {
         treeDataProvider: treeProvider,
         dragAndDropController: treeProvider,
+        canSelectMany: true,
     });
     context.subscriptions.push(treeView);
 
@@ -321,6 +322,37 @@ function registerCommands(context: vscode.ExtensionContext): void {
                 treeProvider: treeProvider,
             });
             // Panel creation handles all guard checks and errors internally
+        }),
+    );
+
+    // --- Feature #12: Inline Rename ---
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.renameObject', async (item) => {
+            const { renameObject } = await import('./commands/rename-object');
+            await renameObject(item as S3ObjectItem | S3PrefixItem, s3Service, treeProvider);
+        }),
+    );
+
+    // --- Feature #11: Object Tag Management ---
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.manageTags', async (item: S3ObjectItem) => {
+            const { manageTags } = await import('./commands/manage-tags');
+            await manageTags(item, s3Service);
+        }),
+    );
+
+    // --- Feature #9: Multi-Select Operations (Batch Delete) ---
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.deleteObject', async (item, selectedItems) => {
+            const { batchDelete } = await import('./commands/batch-delete');
+            // If multiple items are selected, use batch delete
+            const itemsToDelete = selectedItems && Array.isArray(selectedItems) && selectedItems.length > 1
+                ? selectedItems
+                : item;
+            await batchDelete(itemsToDelete, s3Service, treeProvider);
         }),
     );
 }

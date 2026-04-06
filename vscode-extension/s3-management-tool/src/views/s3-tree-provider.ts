@@ -211,7 +211,7 @@ export class S3TreeProvider implements
 
     /**
      * Called when dragging starts from this tree. Serializes S3 objects/prefixes
-     * so they can be dropped elsewhere in the tree.
+     * so they can be dropped elsewhere in the tree or to the local filesystem.
      */
     handleDrag(
         source: readonly S3TreeItem[],
@@ -245,6 +245,10 @@ export class S3TreeProvider implements
                 'application/vnd.code.tree.s3object',
                 new vscode.DataTransferItem(JSON.stringify(s3Items)),
             );
+
+            // Also set 'files' for drag-to-local-filesystem support
+            // We'll handle the actual download in handleDrop when target is undefined
+            // (i.e., dropped outside any tree item)
         }
     }
 
@@ -253,6 +257,19 @@ export class S3TreeProvider implements
         dataTransfer: vscode.DataTransfer,
         token: vscode.CancellationToken,
     ): Promise<void> {
+        // Check if this is an S3-to-S3 drag operation (dragged from this tree)
+        const s3DragItem = dataTransfer.get('application/vnd.code.tree.s3object');
+
+        // If dropped outside any tree item (target is undefined), handle as download
+        if (!target) {
+            if (s3DragItem) {
+                await this.handleS3ToLocalDrop(s3DragItem, token);
+                return;
+            }
+            // Dropped local files on empty area — no valid operation
+            return;
+        }
+
         // 1. Resolve target bucket + prefix
         let bucket: string;
         let prefix: string;
@@ -272,7 +289,6 @@ export class S3TreeProvider implements
         }
 
         // 2. Check if this is an S3-to-S3 drag operation
-        const s3DragItem = dataTransfer.get('application/vnd.code.tree.s3object');
         if (s3DragItem) {
             await this.handleS3ToS3Drop(s3DragItem, bucket, prefix, region, target, token);
             return;
@@ -495,6 +511,203 @@ export class S3TreeProvider implements
         } while (continuationToken && !cancellation.isCancellationRequested);
 
         return { processed, errors, errorDetails };
+    }
+
+    /**
+     * Handles drag-and-drop of S3 objects/prefixes to a local folder.
+     * Prompts for a destination folder, then downloads all dragged items.
+     */
+    private async handleS3ToLocalDrop(
+        s3DragItem: vscode.DataTransferItem,
+        token: vscode.CancellationToken,
+    ): Promise<void> {
+        // Parse the dragged S3 items
+        const text = await s3DragItem.asString();
+        let draggedItems: Array<{ type: 'object' | 'prefix'; bucket: string; region: string; key?: string; prefix?: string }>;
+        try {
+            draggedItems = JSON.parse(text);
+        } catch {
+            vscode.window.showErrorMessage('Failed to parse dragged S3 items.');
+            return;
+        }
+
+        if (draggedItems.length === 0) {
+            return;
+        }
+
+        // Prompt for local destination folder
+        const folderUris = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            openLabel: 'Download Here',
+        });
+
+        if (!folderUris || folderUris.length === 0) {
+            return; // User cancelled
+        }
+
+        const destFolder = folderUris[0].fsPath;
+        const path = await import('path');
+
+        // Download each item
+        let downloaded = 0;
+        let errors = 0;
+        const errorDetails: string[] = [];
+
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Downloading ${draggedItems.length} item(s) to ${destFolder}...`,
+                cancellable: true,
+            },
+            async (progress, innerToken) => {
+                for (let i = 0; i < draggedItems.length; i++) {
+                    if (token.isCancellationRequested || innerToken.isCancellationRequested) {
+                        vscode.window.showWarningMessage(
+                            `Download cancelled. ${downloaded} item(s) downloaded.`,
+                        );
+                        return;
+                    }
+
+                    const item = draggedItems[i];
+                    progress.report({ message: `[${i + 1}/${draggedItems.length}] ${item.key || item.prefix}` });
+
+                    try {
+                        if (item.type === 'object') {
+                            // Download single object
+                            const fileName = item.key!.split('/').pop()!;
+                            const destPath = path.join(destFolder, fileName);
+
+                            await this.downloadSingleFile(
+                                item.bucket,
+                                item.key!,
+                                item.region,
+                                destPath,
+                            );
+
+                            downloaded++;
+                        } else if (item.type === 'prefix') {
+                            // Download entire prefix
+                            const result = await this.downloadPrefix(
+                                item.bucket,
+                                item.prefix!,
+                                item.region,
+                                destFolder,
+                                (message) => { progress.report({ message }); },
+                                { get isCancellationRequested() { return innerToken.isCancellationRequested || token.isCancellationRequested; } },
+                            );
+
+                            downloaded += result.downloaded;
+                            errors += result.errors;
+                            errorDetails.push(...result.errorDetails);
+                        }
+                    } catch (err) {
+                        errors++;
+                        const msg = err instanceof Error ? err.message : String(err);
+                        errorDetails.push(`${item.key || item.prefix}: ${msg}`);
+                    }
+                }
+            },
+        );
+
+        // Summary
+        if (downloaded > 0 || errors > 0) {
+            let summary = `Downloaded: ${downloaded}`;
+            if (errors > 0) { summary += ` · Errors: ${errors}`; }
+
+            if (errors > 0) {
+                vscode.window.showWarningMessage(summary);
+            } else {
+                vscode.window.showInformationMessage(summary);
+            }
+        }
+    }
+
+    /**
+     * Downloads a single S3 object to a local file.
+     */
+    private async downloadSingleFile(
+        bucket: string,
+        key: string,
+        region: string,
+        destPath: string,
+    ): Promise<void> {
+        const fs = await import('fs');
+        const stream = await this.s3Service.getObject(bucket, key, region);
+        const writeStream = fs.createWriteStream(destPath);
+        await new Promise<void>((resolve, reject) => {
+            stream.pipe(writeStream);
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+            stream.on('error', reject);
+        });
+    }
+
+    /**
+     * Downloads all objects under a prefix to a local folder.
+     */
+    private async downloadPrefix(
+        bucket: string,
+        prefix: string,
+        region: string,
+        destFolder: string,
+        onProgress: (message: string) => void,
+        cancellation: { readonly isCancellationRequested: boolean },
+    ): Promise<{ downloaded: number; errors: number; errorDetails: string[] }> {
+        const fs = await import('fs');
+        const path = await import('path');
+        let downloaded = 0;
+        let errors = 0;
+        const errorDetails: string[] = [];
+
+        // List all objects under the prefix
+        let continuationToken: string | undefined;
+        do {
+            const page = await this.s3Service.listObjects(bucket, prefix, region, continuationToken);
+
+            for (const obj of page.objects) {
+                if (cancellation.isCancellationRequested) {
+                    break;
+                }
+
+                try {
+                    // Calculate local file path preserving directory structure
+                    const relativePath = obj.key.startsWith(prefix)
+                        ? obj.key.slice(prefix.length)
+                        : obj.key;
+                    const destPath = path.join(destFolder, relativePath);
+
+                    // Ensure parent directory exists
+                    const destDir = path.dirname(destPath);
+                    if (!fs.existsSync(destDir)) {
+                        fs.mkdirSync(destDir, { recursive: true });
+                    }
+
+                    onProgress(`Downloading ${obj.key}...`);
+
+                    // Download the object
+                    const stream = await this.s3Service.getObject(bucket, obj.key, region);
+                    const writeStream = fs.createWriteStream(destPath);
+                    await new Promise<void>((resolve, reject) => {
+                        stream.pipe(writeStream);
+                        writeStream.on('finish', resolve);
+                        writeStream.on('error', reject);
+                        stream.on('error', reject);
+                    });
+
+                    downloaded++;
+                } catch (err) {
+                    errors++;
+                    const msg = err instanceof Error ? err.message : String(err);
+                    errorDetails.push(`${obj.key}: ${msg}`);
+                }
+            }
+
+            continuationToken = page.nextContinuationToken;
+        } while (continuationToken && !cancellation.isCancellationRequested);
+
+        return { downloaded, errors, errorDetails };
     }
 
     /**

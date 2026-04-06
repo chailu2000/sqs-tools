@@ -137,6 +137,16 @@
                 "command": "s3-management-tool.viewVersions",
                 "title": "View Versions",
                 "icon": "$(history)"
+            },
+            {
+                "command": "s3-management-tool.renameObject",
+                "title": "Rename",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "s3-management-tool.manageTags",
+                "title": "Manage Tags",
+                "icon": "$(tag)"
             }
         ],
         "views": {
@@ -266,6 +276,21 @@
                     "command": "s3-management-tool.viewVersions",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@8"
+                },
+                {
+                    "command": "s3-management-tool.renameObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@9"
+                },
+                {
+                    "command": "s3-management-tool.renameObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
+                    "group": "1_object@0"
+                },
+                {
+                    "command": "s3-management-tool.manageTags",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@10"
                 }
             ]
         }
