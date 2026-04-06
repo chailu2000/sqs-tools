@@ -510,6 +510,16 @@ export class S3TreeProvider implements
             continuationToken = page.nextContinuationToken;
         } while (continuationToken && !cancellation.isCancellationRequested);
 
+        // If moving, also delete the folder placeholder object (zero-byte object ending with /)
+        // This is filtered out by listObjects so we need to delete it explicitly
+        if (isMove) {
+            try {
+                await this.s3Service.deleteObject(srcBucket, srcPrefix, srcRegion);
+            } catch {
+                // Folder placeholder may not exist — that's OK
+            }
+        }
+
         return { processed, errors, errorDetails };
     }
 

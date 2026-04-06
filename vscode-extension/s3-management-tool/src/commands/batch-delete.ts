@@ -140,6 +140,15 @@ async function deletePrefixRecursive(
         continuationToken = page.nextContinuationToken;
     } while (continuationToken && !cancellation.isCancellationRequested);
 
+    // Also delete the folder placeholder object (zero-byte object ending with /)
+    // This is filtered out by listObjects so we need to delete it explicitly
+    try {
+        await s3Service.deleteObject(bucket, prefix, region);
+        deleted++;
+    } catch {
+        // Folder placeholder may not exist — that's OK
+    }
+
     return { deleted, errors, errorDetails };
 }
 

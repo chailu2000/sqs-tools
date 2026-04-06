@@ -193,6 +193,14 @@ async function renamePrefix(
                         // Best-effort cleanup — log but don't fail
                     }
                 }
+
+                // Also delete the folder placeholder object (zero-byte object ending with /)
+                // This is filtered out by listObjects so we need to delete it explicitly
+                try {
+                    await s3Service.deleteObject(item.bucket, srcPrefix, item.region);
+                } catch {
+                    // Folder placeholder may not exist — that's OK
+                }
             }
 
             if (errors > 0) {
