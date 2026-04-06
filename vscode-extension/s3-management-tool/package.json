@@ -147,6 +147,11 @@
                 "command": "s3-management-tool.manageTags",
                 "title": "Manage Tags",
                 "icon": "$(tag)"
+            },
+            {
+                "command": "s3-management-tool.downloadSelected",
+                "title": "Download Selected",
+                "icon": "$(cloud-download)"
             }
         ],
         "views": {
@@ -296,6 +301,16 @@
                     "command": "s3-management-tool.manageTags",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "1_object@10"
+                },
+                {
+                    "command": "s3-management-tool.downloadSelected",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "inline"
+                },
+                {
+                    "command": "s3-management-tool.downloadSelected",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
+                    "group": "inline"
                 }
             ]
         }

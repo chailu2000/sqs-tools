@@ -338,7 +338,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
         }),
     );
 
-    // --- Feature #9: Multi-Select Operations (Batch Delete) ---
+    // --- Feature #9: Multi-Select Operations (Batch Delete, Batch Download) ---
 
     context.subscriptions.push(
         vscode.commands.registerCommand('s3-management-tool.deleteObject', async (item, selectedItems) => {
@@ -348,6 +348,16 @@ function registerCommands(context: vscode.ExtensionContext): void {
                 ? selectedItems
                 : item;
             await batchDelete(itemsToDelete, s3Service, treeProvider);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.downloadSelected', async (item, selectedItems) => {
+            const { downloadSelected } = await import('./commands/download-selected');
+            const itemsToDownload = selectedItems && Array.isArray(selectedItems) && selectedItems.length > 1
+                ? selectedItems
+                : item;
+            await downloadSelected(itemsToDownload, s3Service);
         }),
     );
 }
