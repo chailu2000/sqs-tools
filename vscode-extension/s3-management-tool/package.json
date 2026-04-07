@@ -3,6 +3,41 @@
     "displayName": "AWS S3 Management Tool",
     "description": "Manage AWS S3 buckets and objects directly from VS Code.",
     "version": "0.1.0",
+    "publisher": "chailu2000",
+    "author": {
+        "name": "Lu Chai",
+        "email": "chailu2000@gmail.com"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/chailu2000/sqs-tools/tree/main/vscode-extension/s3-management-tool"
+    },
+    "bugs": {
+        "url": "https://github.com/chailu2000/sqs-tools/issues"
+    },
+    "homepage": "https://github.com/chailu2000/sqs-tools/tree/main/vscode-extension/s3-management-tool#readme",
+    "icon": "images/icon.png",
+    "galleryBanner": {
+        "color": "#232F3E",
+        "theme": "dark"
+    },
+    "keywords": [
+        "aws",
+        "s3",
+        "storage",
+        "amazon",
+        "cloud",
+        "devops",
+        "file manager",
+        "bucket",
+        "sync",
+        "upload",
+        "download"
+    ],
+    "categories": [
+        "Other"
+    ],
     "engines": {
         "vscode": "^1.88.0"
     },
@@ -245,12 +280,12 @@
                 {
                     "command": "s3-management-tool.deleteObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
-                    "group": "1_object@4"
+                    "group": "inline"
                 },
                 {
                     "command": "s3-management-tool.renameObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Prefix",
-                    "group": "1_object@5"
+                    "group": "1_object@4"
                 },
                 {
                     "command": "s3-management-tool.downloadSelected",
@@ -260,57 +295,57 @@
                 {
                     "command": "s3-management-tool.deleteObject",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@1"
-                },
-                {
-                    "command": "s3-management-tool.renameObject",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@2"
-                },
-                {
-                    "command": "s3-management-tool.downloadObject",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@3"
-                },
-                {
-                    "command": "s3-management-tool.previewObject",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@4"
-                },
-                {
-                    "command": "s3-management-tool.copyObject",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@5"
-                },
-                {
-                    "command": "s3-management-tool.viewMetadata",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@6"
-                },
-                {
-                    "command": "s3-management-tool.copyS3Uri",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@7"
-                },
-                {
-                    "command": "s3-management-tool.generatePresignedUrl",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@8"
-                },
-                {
-                    "command": "s3-management-tool.viewVersions",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@9"
-                },
-                {
-                    "command": "s3-management-tool.manageTags",
-                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
-                    "group": "1_object@10"
+                    "group": "inline"
                 },
                 {
                     "command": "s3-management-tool.downloadSelected",
                     "when": "view == s3ManagementBuckets && viewItem == s3Object",
                     "group": "inline"
+                },
+                {
+                    "command": "s3-management-tool.downloadObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@1"
+                },
+                {
+                    "command": "s3-management-tool.previewObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@2"
+                },
+                {
+                    "command": "s3-management-tool.copyObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@3"
+                },
+                {
+                    "command": "s3-management-tool.viewMetadata",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@4"
+                },
+                {
+                    "command": "s3-management-tool.copyS3Uri",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@5"
+                },
+                {
+                    "command": "s3-management-tool.generatePresignedUrl",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@6"
+                },
+                {
+                    "command": "s3-management-tool.viewVersions",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@7"
+                },
+                {
+                    "command": "s3-management-tool.renameObject",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@8"
+                },
+                {
+                    "command": "s3-management-tool.manageTags",
+                    "when": "view == s3ManagementBuckets && viewItem == s3Object",
+                    "group": "1_object@9"
                 }
             ]
         }
