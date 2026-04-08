@@ -57,7 +57,8 @@ describe('E2E: S3 Object Operations and Limits', () => {
             );
 
             expect(headResponse.ContentLength).toBe(testContent.length);
-            expect(headResponse.ContentType).toBe('binary/octet-stream');
+            // LocalStack returns 'application/octet-stream' instead of 'binary/octet-stream'
+            expect(headResponse.ContentType).toBe('application/octet-stream');
         });
 
         it('should upload and retrieve a JSON file', async () => {

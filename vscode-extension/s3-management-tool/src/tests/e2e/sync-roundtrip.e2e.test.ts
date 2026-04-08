@@ -14,7 +14,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { SyncService, CancellationToken } from '../../services/sync-service';
 import { SyncOptions, SyncResult } from '../../models/s3-models';
 import {
@@ -41,7 +41,9 @@ describe('E2E: Full Sync Round-Trip', () => {
         fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-fixture-'));
         fs.writeFileSync(path.join(fixtureDir, 'file1.txt'), 'Hello, World!');
         fs.writeFileSync(path.join(fixtureDir, 'file2.json'), JSON.stringify({ test: true }));
-        fs.writeFileSync(path.join(fixtureDir, 'nested', 'file3.txt'), 'Nested content', { recursive: true });
+        // Create nested directory first, then write file
+        fs.mkdirSync(path.join(fixtureDir, 'nested'), { recursive: true });
+        fs.writeFileSync(path.join(fixtureDir, 'nested', 'file3.txt'), 'Nested content');
 
         // Create test bucket with fixtures
         const fixtures = [
@@ -81,7 +83,7 @@ describe('E2E: Full Sync Round-Trip', () => {
         };
 
         const token: CancellationToken = { isCancellationRequested: false };
-        const result = await syncService.syncLocalToS3(options, token, () => {});
+        const result = await syncService.syncLocalToS3(options, token, () => { });
 
         // Verify sync result
         expect(result.status).toBe('completed');
@@ -117,7 +119,7 @@ describe('E2E: Full Sync Round-Trip', () => {
         };
 
         const token: CancellationToken = { isCancellationRequested: false };
-        const result = await syncService.syncS3ToLocal(options, token, () => {});
+        const result = await syncService.syncS3ToLocal(options, token, () => { });
 
         // Verify sync result
         expect(result.status).toBe('completed');
@@ -152,7 +154,7 @@ describe('E2E: Full Sync Round-Trip', () => {
         };
 
         const token: CancellationToken = { isCancellationRequested: false };
-        const result = await syncService.syncS3ToLocal(options, token, () => {});
+        const result = await syncService.syncS3ToLocal(options, token, () => { });
 
         // All files should be skipped (checksum match)
         expect(result.skipped).toBeGreaterThan(0);
