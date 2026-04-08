@@ -2,7 +2,11 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "./out-e2e",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "types": [
+            "node",
+            "jest"
+        ]
     },
     "include": [
         "src/**/*.ts",

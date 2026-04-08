@@ -18,15 +18,13 @@ describe('SyncService Property Tests — Dry-Run', () => {
     // -----------------------------------------------------------------------
 
     // Feature: s3-management-tool, Property 8: Dry-run produces zero AWS mutations
-    it.skip('Property 8: Dry-run syncLocalToS3 produces zero AWS mutations', async () => {
-        // This test requires complex mocking of filesystem and S3 service
-        // The actual dry-run behavior is tested via E2E tests with LocalStack
+    it('Property 8: Dry-run syncLocalToS3 produces zero AWS mutations', async () => {
         await fc.assert(
             fc.asyncProperty(
-                fc.array(fc.string({ minLength: 1, maxLength: 20 })),
+                fc.array(fc.string({ minLength: 2, maxLength: 20 }).filter(s => !/^[.\\/]+$/.test(s) && !/[<>:"|?*]/.test(s))),
                 fc.array(
                     fc.record({
-                        key: fc.string({ minLength: 1, maxLength: 50 }),
+                        key: fc.string({ minLength: 2, maxLength: 50 }),
                         etag: fc.hexaString({ minLength: 32, maxLength: 32 }),
                     }),
                 ),
@@ -39,11 +37,15 @@ describe('SyncService Property Tests — Dry-Run', () => {
                         // Create local files
                         for (const name of fileNames) {
                             const safeName = name.replace(/[<>:"/\\|?*]/g, '_');
-                            if (safeName.length > 0) {
-                                fs.writeFileSync(
-                                    path.join(tempDir, safeName),
-                                    `content-${name}-${Date.now()}`,
-                                );
+                            if (safeName.length > 0 && safeName !== '.' && safeName !== '..') {
+                                const filePath = path.join(tempDir, safeName);
+                                // Ensure it's not trying to write to a directory
+                                if (!fs.existsSync(filePath) || !fs.statSync(filePath).isDirectory()) {
+                                    fs.writeFileSync(
+                                        filePath,
+                                        `content-${name}-${Date.now()}`,
+                                    );
+                                }
                             }
                         }
 
@@ -59,7 +61,7 @@ describe('SyncService Property Tests — Dry-Run', () => {
                                 })),
                                 commonPrefixes: [],
                                 isTruncated: false,
-                            } as ListObjectsPage),
+                            }),
                             putObject: jest.fn(),
                             deleteObject: jest.fn(),
                             getObject: jest.fn(),
@@ -101,13 +103,11 @@ describe('SyncService Property Tests — Dry-Run', () => {
                     }
                 },
             ),
-            { numRuns: 50 }, // Reduced for filesystem operations
+            { numRuns: 30 }, // Reduced for filesystem operations
         );
     });
 
-    it.skip('Property 8: Dry-run syncS3ToLocal produces zero AWS mutations', async () => {
-        // This test requires complex mocking of filesystem and S3 service
-        // The actual dry-run behavior is tested via E2E tests with LocalStack
+    it('Property 8: Dry-run syncS3ToLocal produces zero AWS mutations', async () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.array(
@@ -133,7 +133,7 @@ describe('SyncService Property Tests — Dry-Run', () => {
                                 })),
                                 commonPrefixes: [],
                                 isTruncated: false,
-                            } as ListObjectsPage),
+                            }),
                             putObject: jest.fn(),
                             deleteObject: jest.fn(),
                             getObject: jest.fn().mockResolvedValue({

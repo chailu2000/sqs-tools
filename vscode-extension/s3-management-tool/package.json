@@ -362,8 +362,11 @@
         "watch": "tsc -watch -p ./",
         "test": "jest",
         "test:unit": "jest --testPathPattern=src/tests/unit",
+        "test:unit:coverage": "jest --coverage --testPathPattern=src/tests/unit",
         "test:e2e": "jest --config jest.e2e.config.js --runInBand",
         "test:e2e:ci": "CI=true jest --config jest.e2e.config.js --runInBand",
+        "test:e2e:coverage": "CI=true jest --config jest.e2e.config.js --runInBand --coverage",
+        "test:all": "pnpm run test:unit && pnpm run test:e2e",
         "package": "vsce package --no-dependencies"
     },
     "dependencies": {

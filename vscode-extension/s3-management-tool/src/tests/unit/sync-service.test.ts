@@ -168,9 +168,7 @@ describe('SyncService — Core Sync Operations', () => {
     // syncLocalToS3 — incremental sync
     // -----------------------------------------------------------------------
 
-    it.skip('syncLocalToS3 uploads only new files', async () => {
-        // This test requires complex mocking of the S3 listing
-        // The property tests cover the actual sync logic
+    it('syncLocalToS3 uploads only new files', async () => {
         // Create local files
         fs.writeFileSync(path.join(tempDir, 'file1.txt'), 'content1');
         fs.writeFileSync(path.join(tempDir, 'file2.txt'), 'content2');
@@ -189,7 +187,7 @@ describe('SyncService — Core Sync Operations', () => {
                 ],
                 commonPrefixes: [],
                 isTruncated: false,
-            } as ListObjectsPage),
+            }),
             putObject: jest.fn().mockResolvedValue({}),
             deleteObject: jest.fn().mockResolvedValue({}),
             getObject: jest.fn(),
@@ -329,8 +327,7 @@ describe('SyncService — Core Sync Operations', () => {
     });
 
     it.skip('syncS3ToLocal skips files that match checksum', async () => {
-        // This test requires complex mocking of the S3 listing
-        // The property tests cover the actual sync logic
+        // TODO: Requires deeper investigation into checksum comparison logic
         // Create local file with matching checksum
         fs.writeFileSync(path.join(tempDir, 'file1.txt'), 'content1');
 
@@ -347,7 +344,7 @@ describe('SyncService — Core Sync Operations', () => {
                 ],
                 commonPrefixes: [],
                 isTruncated: false,
-            } as ListObjectsPage),
+            }),
             putObject: jest.fn(),
             deleteObject: jest.fn(),
             getObject: jest.fn(),
@@ -381,8 +378,7 @@ describe('SyncService — Core Sync Operations', () => {
     // -----------------------------------------------------------------------
 
     it.skip('syncLocalToS3 respects cancellation token', async () => {
-        // This test requires complex mocking of the S3 listing
-        // The property tests cover the actual sync logic
+        // TODO: Requires investigation into how cancellation token is checked during sync
         fs.writeFileSync(path.join(tempDir, 'file1.txt'), 'content1');
         fs.writeFileSync(path.join(tempDir, 'file2.txt'), 'content2');
 
@@ -391,8 +387,12 @@ describe('SyncService — Core Sync Operations', () => {
                 objects: [],
                 commonPrefixes: [],
                 isTruncated: false,
-            } as ListObjectsPage),
-            putObject: jest.fn().mockResolvedValue({}),
+            }),
+            putObject: jest.fn().mockImplementation(async () => {
+                // Simulate some delay
+                await new Promise(resolve => setTimeout(resolve, 10));
+                return {};
+            }),
             deleteObject: jest.fn(),
             getObject: jest.fn(),
         };
