@@ -299,6 +299,15 @@ function registerCommands(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
+        vscode.commands.registerCommand('s3-management-tool.loadMore', async (item) => {
+            const { S3LoadMoreItem } = await import('./views/s3-tree-provider');
+            if (item instanceof S3LoadMoreItem) {
+                await treeProvider.loadMore(item);
+            }
+        }),
+    );
+
+    context.subscriptions.push(
         vscode.commands.registerCommand('s3-management-tool.downloadFolder', async (item: S3PrefixItem) => {
             const { downloadFolder } = await import('./commands/download-folder');
             await downloadFolder(item, s3Service);

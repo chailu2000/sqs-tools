@@ -64,7 +64,7 @@
             {
                 "command": "s3-management-tool.removeBucket",
                 "title": "Remove Bucket",
-                "icon": "$(trash)"
+                "icon": "$(debug-disconnect)"
             },
             {
                 "command": "s3-management-tool.refreshBuckets",
@@ -162,6 +162,11 @@
                 "command": "s3-management-tool.previewObject",
                 "title": "Preview Content",
                 "icon": "$(preview)"
+            },
+            {
+                "command": "s3-management-tool.loadMore",
+                "title": "Load More",
+                "icon": "$(arrow-down)"
             },
             {
                 "command": "s3-management-tool.downloadFolder",

@@ -79,6 +79,50 @@ Select multiple items and perform batch operations like delete or download.
 - 🗑️ **Delete** — batch-deletes all selected items
 - ⬇️ **Download Selected** — batch-downloads all selected items
 
+## Large Folders & Preview Behavior
+
+### Browsing Large Folders
+
+When opening a folder (prefix) in S3, the extension loads objects in pages to maintain performance:
+
+- **Initial Load:** Up to **10,000 items** are loaded immediately
+- **Load More:** If the folder contains more than 10,000 items, a **"Load more files…"** button appears at the bottom of the list
+  - Shows how many items have been loaded so far (e.g., "10 KB loaded so far")
+  - Click to load the next batch of up to 10,000 items
+  - Previously loaded items are preserved — new items are appended
+  - Repeat until all items are loaded
+- **Reset:** Collapsing and re-expanding the folder resets the pagination and starts fresh
+
+This prevents the extension from hanging or becoming unresponsive when browsing folders with hundreds of thousands of files.
+
+> **Note:** S3's `ListObjectsV2` API returns a maximum of 1,000 objects per request. The extension automatically paginates through these requests until it reaches the 10,000 item limit or exhausts all objects.
+
+### Previewing Object Content
+
+The **Preview Content** command opens text-based files directly in VS Code:
+
+**Supported Formats:**
+- **Text files:** `.txt`, `.log`, `.md`, `.csv`, `.ini`, `.cfg`, `.conf`, `.properties`, `.env`, `.plist`
+- **Code:** `.js`, `.ts`, `.jsx`, `.tsx`, `.py`, `.sh`, `.bash`, `.zsh`, `.sql`
+- **Markup:** `.html`, `.xml`, `.yaml`, `.yml`, `.toml`, `.svg`, `.graphql`, `.proto`, `.tf`, `.hcl`
+- **MIME Types:** Any file with a `text/*` MIME type is also supported
+
+**Size Limits:**
+- **≤ 50 KB:** Full content loaded with a simple header comment
+- **50 KB – 5 MB:** Full content loaded with a header showing the file size
+- **> 50 KB (truncated):** If a file exceeds 50 KB during streaming, the preview shows the first 50 KB with a clear warning header:
+  ```
+  // ═══════════════════════════════════════════════════════
+  // S3 Preview: s3://bucket/path/to/file.json
+  // File size: 250 KB — SHOWING FIRST 50 KB ONLY
+  // ⚠ This file is larger than 50 KB and has been truncated.
+  // ⚠ Download the file to view and edit the full content.
+  // ═══════════════════════════════════════════════════════
+  ```
+- **> 5 MB:** Preview is blocked — a message prompts you to download the file instead
+
+**Read-Only:** All previews open in read-only mode. Download the file to make edits.
+
 ## Installation
 
 ### From Source (Development)

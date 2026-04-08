@@ -2,14 +2,16 @@
  * Command: Preview text-based S3 object content in a read-only editor tab.
  *
  * Supports files with text-like extensions or text/* MIME types.
- * Capped at 50 KB to prevent loading large files into memory.
+ * Files up to 50 KB load fully. Larger files show a truncated view
+ * with a clear indicator that more content exists.
  */
 
 import * as vscode from 'vscode';
 import { S3Service } from '../services/s3-service';
 import { S3ObjectItem } from '../views/s3-tree-provider';
 
-const MAX_BYTES = 50 * 1024; // 50 KB
+const SOFT_LIMIT = 50 * 1024; // 50 KB — show full preview with warning
+const HARD_LIMIT = 5 * 1024 * 1024; // 5 MB — absolute cap to prevent memory issues
 
 // Extensions that are considered "text-previewable"
 const TEXT_EXTENSIONS = new Set([
@@ -81,10 +83,10 @@ export async function previewObject(
         return;
     }
 
-    // Step 2: Size guard
-    if (metadata.size > MAX_BYTES) {
+    // Step 2: Size guard — hard limit at 5 MB
+    if (metadata.size > HARD_LIMIT) {
         vscode.window.showInformationMessage(
-            `File "${item.key}" is ${formatSize(metadata.size)} — exceeds the 50 KB preview limit. Please download it instead.`,
+            `File "${item.key}" is ${formatSize(metadata.size)} — exceeds the 5 MB preview limit. Please download it instead.`,
         );
         return;
     }
@@ -105,8 +107,11 @@ export async function previewObject(
 
     // Step 4: Fetch content
     let content: string;
+    let isTruncated = false;
     try {
-        content = await readStreamText(item, s3Service);
+        const result = await readStreamText(item, s3Service, metadata.size);
+        content = result.content;
+        isTruncated = result.isTruncated;
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         vscode.window.showErrorMessage(`Failed to read content of "${item.key}": ${msg}`);
@@ -116,7 +121,29 @@ export async function previewObject(
     // Step 5: Build preview with header
     const language = detectLanguage(item.key);
     const commentDelim = getCommentDelimiter(language);
-    const header = `${commentDelim} S3 Preview: s3://${item.bucket}/${item.key}\n${commentDelim} Read-only — download to edit\n\n`;
+    const s3Uri = `s3://${item.bucket}/${item.key}`;
+
+    let header: string;
+    if (isTruncated) {
+        const warningLines = [
+            `${commentDelim} ═══════════════════════════════════════════════════════`,
+            `${commentDelim} S3 Preview: ${s3Uri}`,
+            `${commentDelim} File size: ${formatSize(metadata.size)} — SHOWING FIRST ${formatSize(SOFT_LIMIT)} ONLY`,
+            `${commentDelim} ⚠ This file is larger than ${formatSize(SOFT_LIMIT)} and has been truncated.`,
+            `${commentDelim} ⚠ Download the file to view and edit the full content.`,
+            `${commentDelim} ═══════════════════════════════════════════════════════`,
+        ];
+        header = warningLines.join('\n') + '\n\n';
+    } else if (metadata.size > SOFT_LIMIT) {
+        const warningLines = [
+            `${commentDelim} S3 Preview: ${s3Uri}`,
+            `${commentDelim} File size: ${formatSize(metadata.size)} — full content loaded`,
+            `${commentDelim} Read-only — download to edit`,
+        ];
+        header = warningLines.join('\n') + '\n\n';
+    } else {
+        header = `${commentDelim} S3 Preview: ${s3Uri}\n${commentDelim} Read-only — download to edit\n\n`;
+    }
 
     const doc = await vscode.workspace.openTextDocument({
         content: header + content,
@@ -133,24 +160,35 @@ export async function previewObject(
 async function readStreamText(
     item: S3ObjectItem,
     s3Service: S3Service,
-): Promise<string> {
+    fileSize: number,
+): Promise<{ content: string; isTruncated: boolean }> {
     const readStream = await s3Service.getObject(item.bucket, item.key, item.region);
 
     const chunks: Buffer[] = [];
     let totalBytes = 0;
+    let isTruncated = false;
+
+    // Use soft limit for truncation, but allow full load up to hard limit
+    // For files <= SOFT_LIMIT, load fully
+    // For files > SOFT_LIMIT, load up to SOFT_LIMIT and mark as truncated
+    const effectiveLimit = fileSize > SOFT_LIMIT ? SOFT_LIMIT : HARD_LIMIT;
 
     for await (const chunk of readStream as AsyncIterable<Buffer>) {
         totalBytes += chunk.length;
-        if (totalBytes > MAX_BYTES) {
+        if (totalBytes > effectiveLimit) {
             // Truncate to limit
-            const excess = totalBytes - MAX_BYTES;
+            const excess = totalBytes - effectiveLimit;
             chunks.push(chunk.slice(0, chunk.length - excess));
+            isTruncated = true;
             break;
         }
         chunks.push(chunk);
     }
 
-    return Buffer.concat(chunks).toString('utf-8');
+    return {
+        content: Buffer.concat(chunks).toString('utf-8'),
+        isTruncated,
+    };
 }
 
 function getFileExtension(key: string): string {

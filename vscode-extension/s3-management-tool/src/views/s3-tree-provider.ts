@@ -22,7 +22,10 @@ import { uploadDirectory, uploadSingleFile } from '../utils/upload-helpers';
 // Tree item types
 // ---------------------------------------------------------------------------
 
-export type S3TreeItem = S3BucketItem | S3PrefixItem | S3ObjectItem | S3ErrorItem;
+export type S3TreeItem = S3BucketItem | S3PrefixItem | S3ObjectItem | S3ErrorItem | S3LoadMoreItem;
+
+// Maximum items to load at once to prevent hanging on huge folders
+const MAX_ITEMS_PER_LOAD = 10000;
 
 export class S3BucketItem extends vscode.TreeItem {
     readonly contextValue = 's3Bucket';
@@ -104,6 +107,29 @@ export class S3ErrorItem extends vscode.TreeItem {
     }
 }
 
+export class S3LoadMoreItem extends vscode.TreeItem {
+    readonly contextValue = 's3LoadMore';
+
+    constructor(
+        public readonly bucket: string,
+        public readonly region: string,
+        public readonly prefix: string,
+        public readonly continuationToken: string,
+        public readonly itemsLoaded: number,
+        public readonly bucketConfig?: BucketConfig,
+    ) {
+        super('Load more files…', vscode.TreeItemCollapsibleState.None);
+        this.description = `${formatSize(itemsLoaded)} loaded so far`;
+        this.iconPath = new vscode.ThemeIcon('arrow-down');
+        this.tooltip = `Click to load the next batch of files from ${bucket}/${prefix}`;
+        this.command = {
+            command: 's3-management-tool.loadMore',
+            title: 'Load More',
+            arguments: [this],
+        };
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Size formatter
 // ---------------------------------------------------------------------------
@@ -131,6 +157,11 @@ export class S3TreeProvider implements
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<S3TreeItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+    // Pagination state: key = "bucket/prefix", value = { continuationToken, itemsLoaded }
+    private readonly paginationState = new Map<string, { continuationToken: string | undefined; itemsLoaded: number }>();
+    // Accumulated items for prefixes that have been paginated
+    private readonly accumulatedItems = new Map<string, { prefixes: string[]; objects: Array<{ key: string; size: number; lastModified: Date }> }>();
+
     constructor(
         private readonly storage: BucketStorage,
         private readonly s3Service: S3Service,
@@ -141,6 +172,61 @@ export class S3TreeProvider implements
      */
     refresh(item?: S3TreeItem): void {
         this._onDidChangeTreeData.fire(item);
+    }
+
+    /**
+     * Load more items when the user clicks the "Load More" item.
+     * This appends the next batch of items to the existing list.
+     */
+    async loadMore(item: S3LoadMoreItem): Promise<void> {
+        const paginationKey = `${item.bucket}/${item.prefix}`;
+        const state = this.paginationState.get(paginationKey);
+
+        if (!state || !state.continuationToken) {
+            vscode.window.showInformationMessage('No more items to load.');
+            return;
+        }
+
+        // Fetch the next batch
+        const nextPrefixes: string[] = [];
+        const nextObjects: Array<{ key: string; size: number; lastModified: Date }> = [];
+        let continuationToken: string | undefined = state.continuationToken;
+        let itemsInThisCall = 0;
+
+        do {
+            const page = await this.s3Service.listObjects(
+                item.bucket,
+                item.prefix,
+                item.region,
+                continuationToken,
+                item.bucketConfig,
+            );
+
+            const newItems = page.commonPrefixes.length + page.objects.length;
+            itemsInThisCall += newItems;
+            nextPrefixes.push(...page.commonPrefixes);
+            nextObjects.push(...page.objects);
+            continuationToken = page.nextContinuationToken;
+
+            if (itemsInThisCall >= MAX_ITEMS_PER_LOAD && continuationToken) {
+                break;
+            }
+        } while (continuationToken);
+
+        // Update state
+        state.itemsLoaded += nextPrefixes.length + nextObjects.length;
+        state.continuationToken = continuationToken;
+        this.paginationState.set(paginationKey, state);
+
+        // Store the accumulated items for this prefix so getChildren can use them
+        const accumulatedKey = `accumulated:${paginationKey}`;
+        const existing = this.accumulatedItems.get(accumulatedKey) || { prefixes: [], objects: [] };
+        existing.prefixes.push(...nextPrefixes);
+        existing.objects.push(...nextObjects);
+        this.accumulatedItems.set(accumulatedKey, existing);
+
+        // Refresh the tree to show the new items
+        this.refresh();
     }
 
     getTreeItem(element: S3TreeItem): vscode.TreeItem {
@@ -187,22 +273,70 @@ export class S3TreeProvider implements
         region: string,
         prefix: string,
         bucketConfig?: BucketConfig,
+        startToken?: string,
     ): Promise<S3TreeItem[]> {
-        const page = await this.s3Service.listObjects(bucket, prefix, region, undefined, bucketConfig);
+        const paginationKey = `${bucket}/${prefix}`;
+        const accumulatedKey = `accumulated:${paginationKey}`;
 
-        if ((page as { accessDenied?: boolean }).accessDenied) {
-            return [new S3ErrorItem(`Access denied to "${bucket}/${prefix}"`)];
+        // If starting fresh, reset pagination state
+        if (!startToken) {
+            this.paginationState.set(paginationKey, { continuationToken: undefined, itemsLoaded: 0 });
+            this.accumulatedItems.delete(accumulatedKey);
         }
 
-        const prefixItems: S3PrefixItem[] = page.commonPrefixes.map(
+        const allPrefixes: string[] = [];
+        const allObjects: Array<{ key: string; size: number; lastModified: Date }> = [];
+        let continuationToken = startToken;
+        let itemsInThisCall = 0;
+
+        // Fetch pages until we hit the limit or run out of data
+        do {
+            const page = await this.s3Service.listObjects(bucket, prefix, region, continuationToken, bucketConfig);
+
+            if ((page as { accessDenied?: boolean }).accessDenied) {
+                return [new S3ErrorItem(`Access denied to "${bucket}/${prefix}"`)];
+            }
+
+            const newItems = page.commonPrefixes.length + page.objects.length;
+            itemsInThisCall += newItems;
+            allPrefixes.push(...page.commonPrefixes);
+            allObjects.push(...page.objects);
+
+            continuationToken = page.nextContinuationToken;
+
+            // Stop if we've loaded enough items in this call
+            if (itemsInThisCall >= MAX_ITEMS_PER_LOAD && continuationToken) {
+                break;
+            }
+        } while (continuationToken);
+
+        // Update pagination state
+        const state = this.paginationState.get(paginationKey) || { continuationToken: undefined, itemsLoaded: 0 };
+        state.itemsLoaded += allPrefixes.length + allObjects.length;
+        state.continuationToken = continuationToken;
+        this.paginationState.set(paginationKey, state);
+
+        // Merge with accumulated items if any
+        const accumulated = this.accumulatedItems.get(accumulatedKey);
+        const finalPrefixes = accumulated ? [...accumulated.prefixes, ...allPrefixes] : allPrefixes;
+        const finalObjects = accumulated ? [...accumulated.objects, ...allObjects] : allObjects;
+
+        const prefixItems: S3PrefixItem[] = finalPrefixes.map(
             p => new S3PrefixItem(bucket, region, p, bucketConfig),
         );
 
-        const objectItems: S3ObjectItem[] = page.objects.map(
+        const objectItems: S3ObjectItem[] = finalObjects.map(
             obj => new S3ObjectItem(bucket, region, obj.key, obj.size, obj.lastModified),
         );
 
-        return [...prefixItems, ...objectItems];
+        const result: S3TreeItem[] = [...prefixItems, ...objectItems];
+
+        // Add "Load More" item if there are more pages
+        if (continuationToken) {
+            result.push(new S3LoadMoreItem(bucket, region, prefix, continuationToken, state.itemsLoaded, bucketConfig));
+        }
+
+        return result;
     }
 
     // -----------------------------------------------------------------------
