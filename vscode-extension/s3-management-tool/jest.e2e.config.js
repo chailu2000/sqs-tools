@@ -13,4 +13,11 @@ module.exports = {
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     testTimeout: 60000, // 60 seconds for E2E tests
     verbose: true,
+    // Fix for AWS SDK v3 dynamic imports
+    transformIgnorePatterns: [
+        'node_modules/(?!( @aws-sdk|@smithy)/)',
+    ],
+    testEnvironmentOptions: {
+        url: 'http://localhost',
+    },
 };

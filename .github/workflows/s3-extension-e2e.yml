@@ -82,13 +82,12 @@ jobs:
         run: pnpm run compile
 
       - name: Start LocalStack
+        working-directory: vscode-extension/s3-management-tool
+        run: docker compose -f tests/e2e/config/docker-compose.localstack.yml up -d
+
+      - name: Wait for LocalStack health check
+        working-directory: vscode-extension/s3-management-tool
         run: |
-          docker run -d --name localstack-s3 \
-            -p 4566:4566 \
-            -e SERVICES=s3 \
-            -e DEFAULT_REGION=us-east-1 \
-            localstack/localstack:latest
-          
           echo "Waiting for LocalStack to be ready..."
           for i in {1..30}; do
             if curl -s http://localhost:4566/_localstack/health | grep -q '"s3": "available"'; then
@@ -99,7 +98,7 @@ jobs:
             sleep 2
           done
           echo "LocalStack failed to start"
-          docker logs localstack-s3
+          docker compose -f tests/e2e/config/docker-compose.localstack.yml logs
           exit 1
 
       - name: Set environment variables
@@ -126,4 +125,5 @@ jobs:
 
       - name: Stop LocalStack
         if: always()
-        run: docker rm -f localstack-s3
+        working-directory: vscode-extension/s3-management-tool
+        run: docker compose -f tests/e2e/config/docker-compose.localstack.yml down
