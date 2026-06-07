@@ -132,9 +132,10 @@ test.describe('Visual Regression', () => {
             // Wait for messages to be reflected in the table
             await page.locator('.message-table table').waitFor({ state: 'visible' });
 
-            // Mask timestamp column as toLocaleString() is browser/env dependent
+            // Mask timestamp column and info banners (content may vary)
             const mask = [
-                page.locator('.message-table td:nth-child(4)')
+                page.locator('.message-table td:nth-child(4)'),
+                page.locator('.info-banner')
             ];
 
             await expect(page).toHaveScreenshot('02-main-queue-table.png', {

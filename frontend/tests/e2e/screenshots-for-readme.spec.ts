@@ -29,9 +29,9 @@ const mockQueue = {
 const mockMessages = [
     {
         messageId: 'msg-1',
-        body: JSON.stringify({ 
-            orderId: 'ORD-12345', 
-            status: 'processing', 
+        body: JSON.stringify({
+            orderId: 'ORD-12345',
+            status: 'processing',
             customer: 'John Doe',
             items: [
                 { productId: 'PROD-001', name: 'Wireless Mouse', quantity: 2, price: 29.99 },
@@ -40,12 +40,12 @@ const mockMessages = [
             total: 139.97
         }),
         receiptHandle: 'rh1',
-        attributes: { 
-            SentTimestamp: '1700001000000', 
+        attributes: {
+            SentTimestamp: '1700001000000',
             ApproximateReceiveCount: '1',
             ApproximateFirstReceiveTimestamp: '1700001000000'
         },
-        messageAttributes: { 
+        messageAttributes: {
             OrderType: { dataType: 'String', stringValue: 'premium' },
             Priority: { dataType: 'String', stringValue: 'high' }
         },
@@ -64,8 +64,8 @@ const mockMessages = [
             }
         }),
         receiptHandle: 'rh2',
-        attributes: { 
-            SentTimestamp: '1700002000000', 
+        attributes: {
+            SentTimestamp: '1700002000000',
             ApproximateReceiveCount: '3',
             ApproximateFirstReceiveTimestamp: '1700001500000'
         },
@@ -78,8 +78,8 @@ const mockMessages = [
         messageId: 'msg-3',
         body: 'Plain text notification: System maintenance scheduled for tonight at 11 PM EST',
         receiptHandle: 'rh3',
-        attributes: { 
-            SentTimestamp: '1700003000000', 
+        attributes: {
+            SentTimestamp: '1700003000000',
             ApproximateReceiveCount: '1',
             ApproximateFirstReceiveTimestamp: '1700003000000'
         },
@@ -98,8 +98,8 @@ const mockDlqMessages = [
             stackTrace: 'Error: Connection timeout\n    at processPayment (/app/services/payment.js:45:12)\n    at async handleMessage (/app/workers/queue-worker.js:78:5)'
         }),
         receiptHandle: 'dlq-rh1',
-        attributes: { 
-            SentTimestamp: '1700004000000', 
+        attributes: {
+            SentTimestamp: '1700004000000',
             ApproximateReceiveCount: '5',
             ApproximateFirstReceiveTimestamp: '1700003000000'
         },
@@ -170,12 +170,12 @@ test.describe('Screenshots for README', () => {
         // Select a queue to show the main interface
         await queuePage.selectQueue(mockQueue.queueName);
         await messagePage.setViewMode('table');
-        
+
         // Wait for messages to load
         await page.locator('.message-table table').waitFor({ state: 'visible' });
-        
+
         // Take screenshot
-        await page.screenshot({ 
+        await page.screenshot({
             path: '../docs/screenshots/01-main-queue-view.png',
             fullPage: false
         });
@@ -185,8 +185,8 @@ test.describe('Screenshots for README', () => {
         await queuePage.selectQueue(mockQueue.queueName);
         await messagePage.setViewMode('cards');
         await page.locator('.message-viewer').waitFor({ state: 'visible' });
-        
-        await page.screenshot({ 
+
+        await page.screenshot({
             path: '../docs/screenshots/02-cards-view.png',
             fullPage: false
         });
@@ -197,8 +197,8 @@ test.describe('Screenshots for README', () => {
         await messagePage.setViewMode('table');
         await messagePage.switchTab('dlq');
         await page.locator('.message-table table').waitFor({ state: 'visible' });
-        
-        await page.screenshot({ 
+
+        await page.screenshot({
             path: '../docs/screenshots/03-dlq-view.png',
             fullPage: false
         });
@@ -209,8 +209,8 @@ test.describe('Screenshots for README', () => {
         await messagePage.setViewMode('table');
         await messagePage.switchTab('queue');
         await page.locator('.queue-details').waitFor({ state: 'visible' });
-        
-        await page.screenshot({ 
+
+        await page.screenshot({
             path: '../docs/screenshots/04-queue-details.png',
             fullPage: false
         });
@@ -219,8 +219,8 @@ test.describe('Screenshots for README', () => {
     test('05 - Settings panel', async ({ page }) => {
         await page.locator('.btn-settings').click();
         await page.locator('.settings-panel, .modal-content').first().waitFor({ state: 'visible' });
-        
-        await page.screenshot({ 
+
+        await page.screenshot({
             path: '../docs/screenshots/05-settings.png',
             fullPage: false
         });
@@ -230,15 +230,15 @@ test.describe('Screenshots for README', () => {
         await queuePage.selectQueue(mockQueue.queueName);
         await messagePage.setViewMode('cards');
         await page.locator('.message-viewer').waitFor({ state: 'visible' });
-        
-        // Click on first message to expand it
-        const firstMessage = page.locator('.message-card').first();
-        await firstMessage.click();
-        
-        // Wait for expanded content
-        await page.locator('.message-details').first().waitFor({ state: 'visible' });
-        
-        await page.screenshot({ 
+
+        // Click the Expand button on the first message card
+        const firstExpandBtn = page.locator('.message-card').first().locator('.btn-expand');
+        await firstExpandBtn.click();
+
+        // Wait for the inline expanded body (code-block appears inside the card)
+        await page.locator('.message-card .code-block').first().waitFor({ state: 'visible' });
+
+        await page.screenshot({
             path: '../docs/screenshots/06-message-expanded.png',
             fullPage: false
         });
