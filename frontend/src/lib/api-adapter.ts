@@ -99,7 +99,8 @@ export const api = {
             queueId,
             maxMessages: options.maxMessages,
             visibilityTimeout: options.visibilityTimeout,
-            waitTimeSeconds: options.waitTimeSeconds || 0
+            waitTimeSeconds: options.waitTimeSeconds || 0,
+            peek: options.peek
         });
 
         const result = await promise;
@@ -123,7 +124,8 @@ export const api = {
             command: 'fetchDLQMessages',
             queueId,
             maxMessages: options.maxMessages,
-            visibilityTimeout: options.visibilityTimeout
+            visibilityTimeout: options.visibilityTimeout,
+            peek: options.peek
         });
 
         const result = await promise;
@@ -219,5 +221,15 @@ export const api = {
      */
     async getQueueConfiguration(queueId: string): Promise<QueueConfiguration> {
         throw new Error('getQueueConfiguration not supported in extension context');
+    },
+
+    /**
+     * Reset visibility of tracked messages back to 0 (non-blocking)
+     */
+    async resetVisibility(queueId: string): Promise<void> {
+        vscode.postMessage({
+            command: 'resetVisibility',
+            queueId
+        });
     }
 };

@@ -351,7 +351,7 @@ export class SQSService implements ISQSService {
                     await this.deleteMessage(dlqUrl, message.receiptHandle);
 
                     result.successCount++;
-                    result.succeeded.push({ messageId: message.messageId });
+                    result.succeeded.push(message.messageId);
                 } catch (error: any) {
                     result.failureCount++;
                     result.failed.push({
@@ -402,7 +402,7 @@ export class SQSService implements ISQSService {
                 await this.deleteMessage(dlqUrl, message.receiptHandle);
 
                 result.successCount++;
-                result.succeeded.push({ messageId: message.messageId });
+                result.succeeded.push(message.messageId);
             } catch (error: any) {
                 result.failureCount++;
                 result.failed.push({

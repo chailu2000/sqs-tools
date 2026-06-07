@@ -157,7 +157,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run bundle",
+    "vscode:prepublish": "cd ../../frontend && pnpm run build:extension && cd ../vscode-extension/sqs-management-tool && pnpm run bundle",
     "bundle": "esbuild ./src/extension-standalone.ts --bundle --outfile=out/extension-standalone.js --external:vscode --format=cjs --platform=node --sourcemap",
     "compile": "tsc -p ./",
     "compile:e2e": "tsc -p ./tsconfig.e2e.json",

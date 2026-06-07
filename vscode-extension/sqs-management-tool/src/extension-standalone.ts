@@ -13,11 +13,13 @@ import { QueueStorage } from './services/queue-storage';
 import { QueueConfig } from './models/queue-storage';
 import { sanitizeForWebview } from './utils/webview-sanitizer';
 import { log } from './utils/logger';
+import { VisibilityTracker } from './services/visibility-tracker';
 
 let extensionContext: vscode.ExtensionContext;
 let clientFactory: SQSClientFactory;
 let credentialProvider: CredentialProvider;
 let queueStorage: QueueStorage;
+let visibilityTracker: VisibilityTracker;
 
 class QueueItem extends vscode.TreeItem {
     constructor(
@@ -73,6 +75,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize services
     credentialProvider = new CredentialProvider(context.secrets);
     queueStorage = new QueueStorage(context);
+
+    visibilityTracker = new VisibilityTracker((region: string) => {
+        const client = clientFactory.getClient(region);
+        return new SQSService(client);
+    });
 
     // Initialize client factory with credentials
     try {
@@ -226,6 +233,16 @@ function registerCommands(
             );
 
             panel.webview.html = getWebviewContent(panel.webview, queue);
+
+            // Handle panel disposal - reset any tracked peek message visibility
+            panel.onDidDispose(
+                async () => {
+                    log(`Panel disposed for queue: ${queue.name}. Resetting any tracked peek messages...`);
+                    await visibilityTracker.resetVisibilityForPanel(queue.id);
+                },
+                null,
+                context.subscriptions
+            );
 
             // Handle messages from webview
             panel.webview.onDidReceiveMessage(
@@ -631,11 +648,31 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
     switch (message.command) {
         case 'fetchMessages':
             try {
+                // If Peek Mode is enabled (peek is true) and visibilityTimeout is 0,
+                // we use a temporary visibility timeout of 30 seconds to prevent the same messages
+                // from being received repeatedly by subsequent poll requests in the same session.
+                const isPeekMode = message.peek === true;
+                const requestedVisibility = message.visibilityTimeout !== undefined ? message.visibilityTimeout : 30;
+                const useTempVisibility = isPeekMode && requestedVisibility === 0;
+                const visibilityTimeout = useTempVisibility ? 30 : requestedVisibility;
+
                 const messages = await sqsService.receiveMessages(queue.url, {
                     maxMessages: message.maxMessages || 10,
-                    visibilityTimeout: message.visibilityTimeout || 30,
+                    visibilityTimeout: visibilityTimeout,
                     waitTimeSeconds: message.waitTimeSeconds || 0
                 });
+
+                // Track handles of messages that were read with a temporary visibility timeout
+                if (useTempVisibility && messages.length > 0) {
+                    for (const msg of messages) {
+                        visibilityTracker.trackMessage(queue.id, {
+                            receiptHandle: msg.receiptHandle,
+                            queueUrl: queue.url,
+                            region: queue.region
+                        });
+                    }
+                }
+
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'messagesLoaded',
                     messages
@@ -653,11 +690,27 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
                 if (!queue.dlqUrl) {
                     throw new Error('No DLQ configured for this queue');
                 }
+                const isPeekMode = message.peek === true;
+                const requestedVisibility = message.visibilityTimeout !== undefined ? message.visibilityTimeout : 30;
+                const useTempVisibility = isPeekMode && requestedVisibility === 0;
+                const visibilityTimeout = useTempVisibility ? 30 : requestedVisibility;
+
                 const messages = await sqsService.receiveMessages(queue.dlqUrl, {
                     maxMessages: message.maxMessages || 10,
-                    visibilityTimeout: message.visibilityTimeout || 30,
+                    visibilityTimeout: visibilityTimeout,
                     waitTimeSeconds: 0
                 });
+
+                if (useTempVisibility && messages.length > 0) {
+                    for (const msg of messages) {
+                        visibilityTracker.trackMessage(queue.id, {
+                            receiptHandle: msg.receiptHandle,
+                            queueUrl: queue.dlqUrl,
+                            region: queue.region
+                        });
+                    }
+                }
+
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'dlqMessagesLoaded',
                     messages
@@ -676,6 +729,10 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
                 // The receiptHandle is queue-specific, so we need to delete from the right queue
                 const deleteQueueUrl = message.dlq && queue.dlqUrl ? queue.dlqUrl : queue.url;
                 await sqsService.deleteMessage(deleteQueueUrl, message.receiptHandle);
+                
+                // Untrack deleted message
+                visibilityTracker.untrackMessage(queue.id, message.receiptHandle);
+
                 panel.webview.postMessage(sanitizeForWebview({
                     command: 'messageDeleted',
                     success: true
@@ -687,6 +744,15 @@ async function handleWebviewMessage(message: any, panel: vscode.WebviewPanel, qu
                     error: error.message
                 }));
                 vscode.window.showErrorMessage(`Failed to delete message: ${error.message}`);
+            }
+            break;
+
+        case 'resetVisibility':
+            try {
+                log(`Resetting visibility for queue: ${queue.name} (explicit request)`);
+                await visibilityTracker.resetVisibilityForPanel(queue.id);
+            } catch (error: any) {
+                log(`Failed to reset visibility for queue ${queue.name}: ${error.message}`);
             }
             break;
 

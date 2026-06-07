@@ -209,6 +209,10 @@
 
     function stopPolling() {
         polling = false;
+        // Reset visibility of all tracked messages back to 0
+        if (store.selectedQueue) {
+            api.resetVisibility(store.selectedQueue.id);
+        }
     }
 
     async function deleteSelected() {
@@ -525,6 +529,10 @@
                 </div>
             </div>
         {/if}
+
+        <div class="info-banner warning">
+            ⚠️ <strong>SQS Receive Count Warning</strong>: AWS SQS does not support non-destructive peeking. Every time a message is fetched (by receiving once or polling), SQS increments its receive count. If this count exceeds the queue's <code>maxReceiveCount</code> threshold, SQS will automatically move the message to the DLQ.
+        </div>
 
         <div class="info-banner">
             💡 <strong>Poll for Messages:</strong> Continuously receives for up

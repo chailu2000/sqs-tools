@@ -121,7 +121,7 @@ export class RedriveService {
                                 await this.sqsService.deleteMessage(dlqUrl, message.receiptHandle);
 
                                 result.successCount++;
-                                result.succeeded.push({ messageId: message.messageId });
+                                result.succeeded.push(message.messageId);
                             } catch (error: any) {
                                 this.logger.error(`Failed to redrive message ${message.messageId}`, error);
                                 result.failureCount++;
@@ -224,7 +224,7 @@ export class RedriveService {
                             await this.sqsService.deleteMessage(dlqUrl, message.receiptHandle);
 
                             result.successCount++;
-                            result.succeeded.push({ messageId: message.messageId });
+                            result.succeeded.push(message.messageId);
                         } catch (error: any) {
                             this.logger.error(`Failed to redrive message ${message.messageId}`, error);
                             result.failureCount++;

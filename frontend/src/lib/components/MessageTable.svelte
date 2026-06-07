@@ -195,6 +195,10 @@
 
     function stopPolling() {
         polling = false;
+        // Reset visibility of all tracked messages back to 0
+        if (store.selectedQueue) {
+            api.resetVisibility(store.selectedQueue.id);
+        }
     }
 
     async function deleteSelected() {
@@ -389,6 +393,15 @@
         store.setActiveTab(tab);
         currentPage = 1;
         store.clearSelection();
+        
+        // Clear messages from the opposite tab to avoid showing wrong messages
+        if (tab === "main" && store.dlqMessages.length > 0) {
+            store.setDlqMessages([]);
+            hasLoadedDlq = false;
+        } else if (tab === "dlq" && store.messages.length > 0) {
+            store.setMessages([]);
+            hasLoadedMain = false;
+        }
     }
 
     $effect(() => {
@@ -523,6 +536,10 @@
                 </div>
             </div>
         {/if}
+
+        <div class="info-banner warning">
+            ⚠️ <strong>SQS Receive Count Warning</strong>: AWS SQS does not support non-destructive peeking. Every time a message is fetched (by receiving once or polling), SQS increments its receive count. If this count exceeds the queue's <code>maxReceiveCount</code> threshold, SQS will automatically move the message to the DLQ.
+        </div>
 
         <div class="info-banner">
             💡 <strong>Poll for Messages:</strong> Continuously receives for up

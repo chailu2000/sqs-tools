@@ -93,7 +93,7 @@ export interface RedriveResult {
     processedCount: number;
     successCount: number;
     failureCount: number;
-    succeeded: Array<{ messageId: string }>;
+    succeeded: string[];
     failed: Array<{ messageId: string; error: string }>;
 }
 

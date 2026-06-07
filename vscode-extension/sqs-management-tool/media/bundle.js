@@ -3911,7 +3911,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
         queueId,
         maxMessages: options.maxMessages,
         visibilityTimeout: options.visibilityTimeout,
-        waitTimeSeconds: options.waitTimeSeconds || 0
+        waitTimeSeconds: options.waitTimeSeconds || 0,
+        peek: options.peek
       });
       const result = await promise;
       return result.messages || [];
@@ -3925,7 +3926,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
         command: "fetchDLQMessages",
         queueId,
         maxMessages: options.maxMessages,
-        visibilityTimeout: options.visibilityTimeout
+        visibilityTimeout: options.visibilityTimeout,
+        peek: options.peek
       });
       const result = await promise;
       return result.messages || [];
@@ -3989,6 +3991,15 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
      */
     async getQueueConfiguration(queueId) {
       throw new Error("getQueueConfiguration not supported in extension context");
+    },
+    /**
+     * Reset visibility of tracked messages back to 0 (non-blocking)
+     */
+    async resetVisibility(queueId) {
+      vscode.postMessage({
+        command: "resetVisibility",
+        queueId
+      });
     }
   };
   class ExtensionStore {
@@ -4569,7 +4580,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   var root_18 = /* @__PURE__ */ from_html(`<div class="detail-row svelte-ih63xe"><strong class="svelte-ih63xe">Message Attributes:</strong> <div class="attributes svelte-ih63xe"></div></div>`);
   var root_15 = /* @__PURE__ */ from_html(`<div class="message-details svelte-ih63xe"><div class="details-header svelte-ih63xe"><h3 class="svelte-ih63xe">Message Details</h3> <button class="btn-close svelte-ih63xe">×</button></div> <div class="details-content svelte-ih63xe"><div class="detail-row svelte-ih63xe"><strong class="svelte-ih63xe">Message ID:</strong> <span> </span></div> <div class="detail-row svelte-ih63xe"><strong class="svelte-ih63xe">Receipt Handle:</strong> <span class="monospace svelte-ih63xe"> </span></div> <!> <!> <!> <div class="detail-row svelte-ih63xe"><strong class="svelte-ih63xe">Body:</strong> <pre class="body-content svelte-ih63xe"> </pre></div></div></div>`);
   var root_2$1 = /* @__PURE__ */ from_html(
-    `<div class="controls svelte-ih63xe"><div class="control-group svelte-ih63xe"><label class="svelte-ih63xe">Visibility (s): <input type="number" min="0" max="43200" class="input-small svelte-ih63xe"/></label> <label class="svelte-ih63xe">Wait Time (s): <input type="number" min="0" max="20" class="input-small svelte-ih63xe"/></label> <label class="checkbox-label svelte-ih63xe" title="Immediately reset visibility timeout to 0 so message stays available for other consumers"><input type="checkbox" class="svelte-ih63xe"/> Peek Mode (keep available)</label> <button class="btn-primary poll-button svelte-ih63xe"> </button> <!> <button class="btn-secondary svelte-ih63xe"> </button></div> <div class="message-count svelte-ih63xe"> </div></div> <!> <div class="info-banner svelte-ih63xe">💡 <strong class="svelte-ih63xe">Poll for Messages:</strong> <strong class="svelte-ih63xe">Receive Once:</strong> Gets a single batch. Messages are deduplicated
+    `<div class="controls svelte-ih63xe"><div class="control-group svelte-ih63xe"><label class="svelte-ih63xe">Visibility (s): <input type="number" min="0" max="43200" class="input-small svelte-ih63xe"/></label> <label class="svelte-ih63xe">Wait Time (s): <input type="number" min="0" max="20" class="input-small svelte-ih63xe"/></label> <label class="checkbox-label svelte-ih63xe" title="Immediately reset visibility timeout to 0 so message stays available for other consumers"><input type="checkbox" class="svelte-ih63xe"/> Peek Mode (keep available)</label> <button class="btn-primary poll-button svelte-ih63xe"> </button> <!> <button class="btn-secondary svelte-ih63xe"> </button></div> <div class="message-count svelte-ih63xe"> </div></div> <!> <div class="info-banner warning svelte-ih63xe">⚠️ <strong class="svelte-ih63xe">SQS Receive Count Warning</strong>: AWS SQS does not support non-destructive peeking. Every time a message is fetched (by receiving once or polling), SQS increments its receive count. If this count exceeds the queue's <code>maxReceiveCount</code> threshold, SQS will automatically move the message to the DLQ.</div> <div class="info-banner svelte-ih63xe">💡 <strong class="svelte-ih63xe">Poll for Messages:</strong> <strong class="svelte-ih63xe">Receive Once:</strong> Gets a single batch. Messages are deduplicated
             by ID. <strong class="svelte-ih63xe">Peek Mode:</strong> Immediately resets visibility timeout to 0.</div> <!> <!> <!> <!> <!> <!> <div class="table-container svelte-ih63xe"><table class="svelte-ih63xe"><thead class="svelte-ih63xe"><tr><th class="svelte-ih63xe"><input type="checkbox"/></th><th class="svelte-ih63xe">Message ID</th><th class="svelte-ih63xe">Body Preview</th><th class="svelte-ih63xe">Timestamp</th><th class="svelte-ih63xe">Receive Count</th><th class="svelte-ih63xe">Attributes</th><th class="svelte-ih63xe">Actions</th></tr></thead><tbody class="svelte-ih63xe"></tbody></table> <!></div> <!> <!> <!>`,
     1
   );
@@ -4735,6 +4746,9 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     }
     function stopPolling() {
       set(polling, false);
+      if (store.selectedQueue) {
+        api.resetVisibility(store.selectedQueue.id);
+      }
     }
     async function deleteSelected() {
       if (!store.selectedQueue || store.selectedMessageIds.size === 0) return;
@@ -4924,7 +4938,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
             if (get(polling)) $$render(consequent_2);
           });
         }
-        var div_10 = sibling(node_2, 2);
+        var div_10 = sibling(node_2, 4);
         var text_7 = sibling(child(div_10), 2);
         text_7.nodeValue = " Continuously receives for up\n            to 120s (like AWS Console). ";
         var node_3 = sibling(div_10, 2);
